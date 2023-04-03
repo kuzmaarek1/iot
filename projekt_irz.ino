@@ -4,13 +4,14 @@
 #include "time.h"
 
 const char* ssid = "ANIA";
-const char* password = "52495557";
+const char* password = "5249555";
 const char* ntpServer = "tempus1.gum.gov.pl";
 const long gmtOffset_sec = 3600;
 const int daylightOffset_sec = 3600;
 int checkWiFiCount = 0;
 int checkWiFi = 0;
 int checkSetupTime = 0;
+int isSetupFirst = 1;
 int setup_hours = 0, setup_minutes = 0, setup_day = 1, setup_month = 1, setup_year = 2023;
 int start_setup = 1;
 
@@ -51,7 +52,23 @@ Button deleteBtn(10, 200, 100, 30, "deleteBtn");
 Button editBtn(210, 200, 100, 30, "editBtn");
 
 int event_day, event_month, event_year, event_hours_start, event_minutes_start, event_hours_end, event_minutes_end, event_type_number;
-char event_type[3][20] = { "Bieganie", "Spotkanie", "Inne" };
+char event_type[15][20] = {
+  "Posilek",
+  "Nauka",
+  "Cwiczenia",
+  "Spotkanie",
+  "Opoczynek",
+  "Porzadki",
+  "Drzemka",
+  "Spacer",
+  "Wyjazd",
+  "Obowiazki",
+  "Rodzina",
+  "Znajmomi",
+  "Szkolenia",
+  "Toaleta",
+  "Inne"
+};
 
 int *all_event_current_startHoursRead, *all_event_current_startMinutesRead, *all_event_current_endHoursRead, *all_event_current_endMinutesRead, *all_event_current_typesRead;
 int all_event_current_day;
@@ -75,7 +92,7 @@ void setupWifi() {
   WiFi.begin(ssid, password);
   checkWiFiCount = 0;
   while (checkWiFiCount < 10) {
-    if(WiFi.status() == WL_CONNECTED) break;
+    if (WiFi.status() == WL_CONNECTED) break;
     delay(500);
     M5.Lcd.print(".");
     checkWiFiCount++;
@@ -888,7 +905,7 @@ void handleEventSub1(Event& e) {
         start_display_add = 1;
       }
     } else if (current_add_page == 3) {
-      if (event_type_number < 2) {
+      if (event_type_number < 14) {
         event_type_number++;
         displayRefresh();
         start_display_add = 1;
@@ -1121,12 +1138,12 @@ void handleSetup(Event& e) {
   if (checkSetupTime > 0) {
     M5.Rtc.GetTime(&RTCtime);
     M5.Rtc.GetDate(&RTCDate);
-    
+
     displayRefresh();
     checkSetupTime = 0;
     setup_hours = RTCtime.Hours;
     setup_minutes = RTCtime.Minutes;
-    setup_day =  RTCDate.Date;
+    setup_day = RTCDate.Date;
     setup_month = RTCDate.Month;
     setup_year = RTCDate.Year;
     start_setup = 1;
@@ -1173,12 +1190,11 @@ void loop() {
 
     M5.Rtc.GetTime(&RTCtime);
     M5.Rtc.GetDate(&RTCDate);
+    isSetupFirst = 0;
 
     if (RTCtime.Hours == 0 && RTCtime.Minutes == 0 && changeDate) {
       setupParametres();
-
       setupData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
-
       delay(1000);
       changeDate = 0;
       current_page = 0;
@@ -1309,10 +1325,17 @@ void loop() {
       displaySetupDateAndTime();
       start_setup = 0;
     }
-    if ((M5.BtnA.wasReleased() || M5.BtnA.pressedFor(1000, 200)) && checkSetupTime == -1) {
+    if ((M5.BtnA.wasReleased() || M5.BtnA.pressedFor(1000, 200)) && (checkSetupTime == -1 || isSetupFirst == 0)) {
       checkSetupTime++;
       displayRefresh();
       displaySetupDateAndTime();
+      if (checkSetupTime == 1) {
+        setupParametres();
+        setupCurrentData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
+        changeDate = 0;
+        current_page = 0;
+        displayRefresh();
+      }
     }
     if ((M5.BtnC.wasReleased() || M5.BtnC.pressedFor(1000, 200)) && checkSetupTime == 0) {
       checkSetupTime--;
