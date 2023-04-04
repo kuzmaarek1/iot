@@ -875,7 +875,7 @@ void handleEventAdd1(Event& e) {
 void handleEventSub1(Event& e) {
   if (checkSetupTime == 0) {
     if (setup_day != 1) {
-      setup_day = 1;
+      setup_day--;
       displayRefresh();
       start_setup = 1;
     }
@@ -1260,7 +1260,7 @@ void loop() {
                 if (event_day == 31) event_day = 30;
               } else {
                 if (event_year % 4 == 0 && event_day > 29) event_day = 29;
-                else if (event_day > 28) event_day = 28;
+                else if (event_year % 4 != 0 && event_day > 28) event_day = 28;
               }
             }
             if (current_add_page == 1 && event_year == RTCDate.Year && (event_month < RTCDate.Month || (event_month == RTCDate.Month && event_day < RTCDate.Date))) {
@@ -1344,7 +1344,7 @@ void loop() {
           if (setup_day == 31) setup_day = 30;
         } else {
           if (setup_year % 4 == 0 && setup_day > 29) setup_day = 29;
-          else if (setup_day > 28) setup_day = 28;
+          else if (setup_year % 4 != 0 && setup_day > 28) setup_day = 28;
         }
       }
       displayRefresh();
