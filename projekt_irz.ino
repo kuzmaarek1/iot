@@ -2,6 +2,11 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include "time.h"
+//diody
+#include "FastLED.h"
+#define LEDS_PIN 25
+#define LEDS_NUM 10
+CRGB ledsBuff[LEDS_NUM];
 
 //Zmienne pomocne do ustawień zegara i wifi
 const char* ssid = "ANIA";
@@ -33,7 +38,9 @@ int indexString;
 int lineRead;
 int searchEvent[7];
 int *all_event_current_startHoursRead, *all_event_current_startMinutesRead, *all_event_current_endHoursRead, *all_event_current_endMinutesRead, *all_event_current_typesRead;
-int all_event_current_day;
+int *all_event_today_startHoursRead, *all_event_today_startMinutesRead, *all_event_today_endHoursRead, *all_event_today_endMinutesRead, *all_event_today_typesRead;
+int all_event_current_day, all_event_today_day = 0;
+
 int event_day, event_month, event_year, event_hours_start, event_minutes_start, event_hours_end, event_minutes_end, event_type_number;
 char event_type[15][20] = {
   "Posilek",
@@ -235,7 +242,8 @@ void displayRefresh() {
 
 void findEvent() {
   all_event_current_day = 0;
-
+  all_event_today_day = 0;
+  M5.Rtc.GetDate(&RTCDate);
   for (int i = 0; i < lineRead; i++) {
     if (yearRead[i] == current_year && monthRead[i] == current_month && dayRead[i] == current_data) {
       all_event_current_startHoursRead = (int*)realloc(all_event_current_startHoursRead, (all_event_current_day + 1) * sizeof(int));
@@ -250,6 +258,20 @@ void findEvent() {
       all_event_current_endMinutesRead[all_event_current_day] = endMinutesRead[i];
       all_event_current_typesRead[all_event_current_day] = typesRead[i];
       all_event_current_day++;
+    }
+    if (yearRead[i] == RTCDate.Year && monthRead[i] == RTCDate.Month && dayRead[i] == RTCDate.Date) {
+      all_event_today_startHoursRead = (int*)realloc(all_event_today_startHoursRead, (all_event_today_day + 1) * sizeof(int));
+      all_event_today_startMinutesRead = (int*)realloc(all_event_today_startMinutesRead, (all_event_today_day + 1) * sizeof(int));
+      all_event_today_endHoursRead = (int*)realloc(all_event_today_endHoursRead, (all_event_today_day + 1) * sizeof(int));
+      all_event_today_endMinutesRead = (int*)realloc(all_event_today_endMinutesRead, (all_event_today_day + 1) * sizeof(int));
+      all_event_today_typesRead = (int*)realloc(all_event_today_typesRead, (all_event_today_day + 1) * sizeof(int));
+
+      all_event_today_startHoursRead[all_event_today_day] = startHoursRead[i];
+      all_event_today_startMinutesRead[all_event_today_day] = startMinutesRead[i];
+      all_event_today_endHoursRead[all_event_today_day] = endHoursRead[i];
+      all_event_today_endMinutesRead[all_event_today_day] = endMinutesRead[i];
+      all_event_today_typesRead[all_event_today_day] = typesRead[i];
+      all_event_today_day++;
     }
   }
   Serial.printf("Line Read %d\n", lineRead);
@@ -1190,22 +1212,59 @@ void setup() {
   if (!SD.begin(5)) {
     Serial.println("Card Mount Failed");
   }
+
+  FastLED.addLeds<SK6812, LEDS_PIN>(ledsBuff, LEDS_NUM);
+  for (int i = 0; i < LEDS_NUM; i++) { ledsBuff[i].setRGB(0, 0, 0); }
+  FastLED.show();
 }
 
 void loop() {
   M5.update();
+  M5.Rtc.GetTime(&RTCtime);
+  M5.Rtc.GetDate(&RTCDate);
+
+  if (all_event_today_day == 0) {
+    for (int i = 0; i < LEDS_NUM; i++) {
+      ledsBuff[i].setRGB(0, 0, 0);
+      M5.Lcd.setCursor(120, 1);
+      M5.Lcd.setTextSize(2);
+      M5.Lcd.print("     ");
+    }
+  }
+
+  for (int i = 0; i < all_event_today_day; i++) {
+    if ((all_event_today_startHoursRead[i] < RTCtime.Hours || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] <= RTCtime.Minutes))
+        && (all_event_today_endHoursRead[i] > RTCtime.Hours || (all_event_today_endHoursRead[i] == RTCtime.Hours && all_event_today_endMinutesRead[i] > RTCtime.Minutes))) {
+      for (int i = 0; i < LEDS_NUM; i++) {
+        M5.Lcd.setCursor(120, 1);
+        M5.Lcd.setTextSize(2);
+        M5.Lcd.print("Alarm");
+        ledsBuff[i].setRGB(100, 0, 0);
+      }
+      break;
+    }
+    if (i == all_event_today_day - 1) {
+      for (int i = 0; i < LEDS_NUM; i++) {
+        M5.Lcd.setCursor(120, 1);
+        M5.Lcd.setTextSize(2);
+        M5.Lcd.print("     ");
+        ledsBuff[i].setRGB(0, 0, 0);
+      }
+      break;
+    }
+  }
+
+  FastLED.show();
   actionEventAdd1();
   actionEventAdd2();
   actionEventAdd3();
   actionEventSub1();
   actionEventSub2();
   actionEventSub3();
+  
   if (checkSetupTime > 0) {
     displayTime();
     displayDate();
-
-    M5.Rtc.GetTime(&RTCtime);
-    M5.Rtc.GetDate(&RTCDate);
     isSetupFirst = 0;
 
     if (RTCtime.Hours == 0 && RTCtime.Minutes == 0 && changeDate) {
@@ -1223,7 +1282,6 @@ void loop() {
 
     switch (current_page) {
       case 0:  //main page
-
         if (start_display_main) {
           readEvent();
           displayMainPage();
