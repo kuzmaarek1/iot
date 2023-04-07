@@ -311,10 +311,22 @@ void displayMainPage() {
     M5.Lcd.setCursor(125, 103);
     M5.Lcd.print("Wiecej");
 
-    M5.Lcd.fillRect(110, 160, 150, 20, RED);
-    M5.Lcd.setTextColor(WHITE, RED);
-    M5.Lcd.setCursor(132, 162);
-    M5.Lcd.print("Szczegoly");
+    M5.Rtc.GetTime(&RTCtime);
+    M5.Rtc.GetDate(&RTCDate);
+    if ((current_data == RTCDate.Date && current_month == RTCDate.Month && current_year == RTCDate.Year) && (all_event_current_startHoursRead[current_events_count - 1] < RTCtime.Hours || (all_event_current_startHoursRead[current_events_count - 1] == RTCtime.Hours && all_event_current_startMinutesRead[current_events_count - 1] <= RTCtime.Minutes))
+        && (all_event_current_endHoursRead[current_events_count - 1] > RTCtime.Hours || (all_event_current_endHoursRead[current_events_count - 1] == RTCtime.Hours && all_event_current_endMinutesRead[current_events_count - 1] > RTCtime.Minutes))) {
+      M5.Lcd.fillRect(110, 160, 150, 20, GREEN);
+      M5.Lcd.setTextColor(BLACK, GREEN);
+      M5.Lcd.setCursor(160, 162);
+      M5.Lcd.print("TRWA");
+
+    } else {
+      M5.Lcd.fillRect(110, 160, 150, 20, RED);
+      M5.Lcd.setTextColor(WHITE, RED);
+      M5.Lcd.setCursor(132, 162);
+      M5.Lcd.print("Szczegoly");
+    }
+
   } else {
     M5.Lcd.setTextColor(RED, BLACK);
     M5.Lcd.setTextSize(3);
@@ -1233,6 +1245,9 @@ void loop() {
   }
 
   for (int i = 0; i < all_event_today_day; i++) {
+    if (current_page == 0 && checkSetupTime > 0 && ((all_event_today_endHoursRead[i] == RTCtime.Hours && all_event_today_endMinutesRead[i] == RTCtime.Minutes) || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] == RTCtime.Minutes)) && 2 > RTCtime.Seconds) {
+      displayMainPage();
+    }
     if ((all_event_today_startHoursRead[i] < RTCtime.Hours || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] <= RTCtime.Minutes))
         && (all_event_today_endHoursRead[i] > RTCtime.Hours || (all_event_today_endHoursRead[i] == RTCtime.Hours && all_event_today_endMinutesRead[i] > RTCtime.Minutes))) {
       for (int i = 0; i < LEDS_NUM; i++) {
@@ -1261,7 +1276,7 @@ void loop() {
   actionEventSub1();
   actionEventSub2();
   actionEventSub3();
-  
+
   if (checkSetupTime > 0) {
     displayTime();
     displayDate();
