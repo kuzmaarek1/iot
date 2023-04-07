@@ -3,54 +3,37 @@
 #include <WiFi.h>
 #include "time.h"
 
+//Zmienne pomocne do ustawień zegara i wifi
 const char* ssid = "ANIA";
 const char* password = "5249555";
 const char* ntpServer = "tempus1.gum.gov.pl";
 const long gmtOffset_sec = 3600;
 const int daylightOffset_sec = 3600;
-int checkWiFiCount = 0;
-int checkWiFi = 0;
-int checkSetupTime = 0;
-int isSetupFirst = 1;
-int setup_hours = 0, setup_minutes = 0, setup_day = 1, setup_month = 1, setup_year = 2023;
-int start_setup = 1;
-
 RTC_TimeTypeDef RTCtime;
 RTC_DateTypeDef RTCDate;
-
 char timeStrbuff[64];
 char dateStrbuff[64];
+int checkWiFiCount = 0, checkWiFi = 0, checkSetupTime = 0;
+int isSetupFirst = 1, start_setup = 1;
+int setup_hours = 0, setup_minutes = 0, setup_day = 1, setup_month = 1, setup_year = 2023;
+int changeDate = 1;
 
-int searchEvent[7];
-
+//Zmienne opowiedzialne za wyświetlanie odpowiednich rzeczy na ekranie
+int current_page = 0, current_main_page = 0, current_add_page = 0, current_all_event_page = 0;
+int start_display_main = 1, start_display_add = 1, start_display_all_event = 1, start_display_details = 1;
 int current_year, current_month, current_data;
-
-int current_page = 0;
-int current_main_page = 0;
-int current_add_page = 0;
-int current_edit_page = 0;
-
 int current_events_count = 1;
 
-int start_display_main = 1;
-int start_display_add = 1;
-int start_display_edit = 1;
-int start_display_details = 1;
-
-int changeDate = 1;
-int stringCount = 0;
-int indexString;
-int lineRead;
-
+//Zmienne wykorzystywane podczas odczytywania lub zapisywania wartości do pliku
 int *dayRead, *monthRead, *yearRead, *startHoursRead, *startMinutesRead, *endHoursRead, *endMinutesRead, *typesRead;
 String strRead;
 File file;
-
-Button detailsBtn(110, 160, 150, 20, "detailsBtn");
-Button addBtn(110, 200, 100, 30, "addBtn");
-Button deleteBtn(10, 200, 100, 30, "deleteBtn");
-Button editBtn(210, 200, 100, 30, "editBtn");
-
+int stringCount = 0;
+int indexString;
+int lineRead;
+int searchEvent[7];
+int *all_event_current_startHoursRead, *all_event_current_startMinutesRead, *all_event_current_endHoursRead, *all_event_current_endMinutesRead, *all_event_current_typesRead;
+int all_event_current_day;
 int event_day, event_month, event_year, event_hours_start, event_minutes_start, event_hours_end, event_minutes_end, event_type_number;
 char event_type[15][20] = {
   "Posilek",
@@ -69,13 +52,14 @@ char event_type[15][20] = {
   "Toaleta",
   "Inne"
 };
-
-int *all_event_current_startHoursRead, *all_event_current_startMinutesRead, *all_event_current_endHoursRead, *all_event_current_endMinutesRead, *all_event_current_typesRead;
-int all_event_current_day;
-
 int deleteError;
 int sortedTypesRead, sortedDayRead, sortedMonthRead, sortedYearRead, sortedStartHoursRead, sortedStartMinutesRead, sortedEndHoursRead, sortedEndMinutesRead;
 
+//Ustawienie wirtualnych
+Button detailsBtn(110, 160, 150, 20, "detailsBtn");
+Button addOrDeleteBtn(110, 200, 100, 30, "addOrDeleteBtn");
+Button allEventBtn(120, 100, 80, 20);
+Button setupBtn(0, 0, 320, 10);
 Button event_add1(210, 90, 40, 35);
 Button event_sub1(260, 90, 40, 35);
 Button event_add2(210, 140, 40, 35);
@@ -83,8 +67,7 @@ Button event_sub2(260, 140, 40, 35);
 Button event_add3(210, 190, 40, 35);
 Button event_sub3(260, 190, 40, 35);
 
-Button setupBtn(0, 0, 320, 10);
-
+//Ustawienie Wifi
 void setupWifi() {
   delay(10);
   M5.Lcd.printf("Connecting to %s", ssid);
@@ -104,6 +87,7 @@ void setupWifi() {
     M5.Lcd.printf("\nNot connected\n");
 }
 
+//Ustawienie czasu
 void setupTime(int hours, int minutes, int seconds) {
   RTCtime.Hours = hours;
   RTCtime.Minutes = minutes;
@@ -155,7 +139,6 @@ void displayDate() {
   }
 }
 
-
 int checkDayInMonth(int day, int month) {
   int n;
   int* tabMonthDays;
@@ -202,7 +185,6 @@ void increaseDay(int conditional) {
     increaseMonthAndYear();
   }
 }
-
 
 void increaseDate() {
 
@@ -299,6 +281,11 @@ void displayMainPage() {
     M5.Lcd.print(event_type[all_event_current_typesRead[current_events_count - 1]]);
 
     M5.Lcd.setTextSize(2);
+    M5.Lcd.fillRect(120, 100, 80, 20, BLUE);
+    M5.Lcd.setTextColor(WHITE, BLUE);
+    M5.Lcd.setCursor(125, 103);
+    M5.Lcd.print("Wiecej");
+
     M5.Lcd.fillRect(110, 160, 150, 20, RED);
     M5.Lcd.setTextColor(WHITE, RED);
     M5.Lcd.setCursor(132, 162);
@@ -499,40 +486,29 @@ void displayAddPage() {
   }
 }
 
-void displayEditPage() {
-  M5.Lcd.setCursor(50, 70);
-  M5.Lcd.print("EDYTOWANIE");
+void displayAllEvent() {
+  M5.Lcd.setCursor(10, 22);
+  int all_page=0;
+  if(all_event_current_day % 9 == 0){
+    all_page=int(all_event_current_day/9);
+  }
+  else{
+    all_page=int(all_event_current_day/9)+1;
+  }
 
-  switch (current_edit_page) {
-    case 0:
-      M5.Lcd.setCursor(250, 50);
-      M5.Lcd.print("1/4");
-      M5.Lcd.setCursor(50, 100);
-      M5.Lcd.print("Data");
-      break;
-    case 1:
-      M5.Lcd.setCursor(250, 50);
-      M5.Lcd.print("2/4");
-      M5.Lcd.setCursor(50, 100);
-      M5.Lcd.print("Czas rozpoczecia");
-      break;
-    case 2:
-      M5.Lcd.setCursor(250, 50);
-      M5.Lcd.print("3/4");
-      M5.Lcd.setCursor(50, 100);
-      M5.Lcd.print("Czas rozpoczecia");
-      break;
-    case 3:
-      M5.Lcd.setCursor(250, 50);
-      M5.Lcd.print("4/4");
-      M5.Lcd.setCursor(50, 100);
-      M5.Lcd.print("Rodzaj wydarzenia");
-      break;
+  M5.Lcd.printf("WYDARZENIA %02d.%02d.%04d %d/%d", current_data, current_month, current_year, 1 + current_all_event_page, all_page);
+
+  for (int i = 0; i < 9; i++) {
+    if (i + current_all_event_page * 9 == all_event_current_day) break;
+    M5.Lcd.setCursor(20, 45 + i * 20);
+    M5.Lcd.printf("%02d:%02d-%02d:%02d %s",
+                  all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
+                  all_event_current_endHoursRead[i + current_all_event_page * 9], all_event_current_endMinutesRead[i + current_all_event_page * 9],
+                  event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
   }
 }
 
 void displayDetailsPage() {
-
   M5.Lcd.setTextSize(2);
   M5.Lcd.setCursor(10, 35);
   M5.Lcd.print("Data");
@@ -564,12 +540,9 @@ void displayDetailsPage() {
 
   M5.Lcd.setTextSize(2);
   M5.Lcd.setTextColor(WHITE, BLUE);
-  M5.Lcd.fillRect(10, 200, 100, 30, BLUE);
-  M5.Lcd.setCursor(40, 210);
+  M5.Lcd.fillRect(110, 200, 100, 30, BLUE);
+  M5.Lcd.setCursor(140, 210);
   M5.Lcd.print("Usun");
-  M5.Lcd.fillRect(210, 200, 100, 30, BLUE);
-  M5.Lcd.setCursor(232, 210);
-  M5.Lcd.print("Edytuj");
 
   M5.Lcd.setTextColor(WHITE, BLACK);
 }
@@ -577,12 +550,12 @@ void displayDetailsPage() {
 void setupParametres() {
   current_main_page = 0;
   current_add_page = 0;
-  current_edit_page = 0;
+  current_all_event_page = 0;
   current_events_count = 1;
 
   start_display_main = 1;
   start_display_add = 1;
-  start_display_edit = 1;
+  start_display_all_event = 1;
   start_display_details = 1;
 }
 
@@ -595,7 +568,7 @@ void handleDetails(Event& e) {
   }
 }
 
-void handleAdd(Event& e) {
+void handleAddOrDelete(Event& e) {
   if (checkSetupTime == -1) {
     setupTime(setup_hours, setup_minutes, 0);
     setupData(setup_year, setup_month, setup_day);
@@ -652,21 +625,7 @@ void handleAdd(Event& e) {
       current_page = 0;
       displayRefresh();
     }
-  }
-}
-
-void handleEdit(Event& e) {
-  if (current_page == 2) {
-    current_page = 3;
-    start_display_details = 1;
-    start_display_edit = 1;
-    displayRefresh();
-  }
-}
-
-void handleDelete(Event& e) {
-  if (current_page == 2) {
-
+  } else if (current_page == 2) {
     displayRefresh();
     M5.Lcd.setCursor(110, 110);
     M5.Lcd.print("USUWANIE");
@@ -759,6 +718,7 @@ void handleDelete(Event& e) {
   }
 }
 
+
 void readEvent() {
   file = SD.open("/events.txt");
   lineRead = 0;
@@ -830,6 +790,7 @@ void readEvent() {
     }
   }
 }
+
 void handleEventAdd1(Event& e) {
   if (checkSetupTime == 0) {
     if (setup_day < 31) {
@@ -1150,6 +1111,15 @@ void handleSetup(Event& e) {
   }
 }
 
+void handleAllEvent(Event& e) {
+  if (checkSetupTime > 0 && current_page == 0 && all_event_current_day!=0) {
+    current_page = 3;
+    start_display_main = 1;
+    start_display_all_event = 1;
+    displayRefresh();
+  }
+}
+
 void setup() {
 
   M5.begin();
@@ -1161,9 +1131,7 @@ void setup() {
   M5.Lcd.setTextSize(2);
 
   detailsBtn.addHandler(handleDetails, E_TOUCH);
-  addBtn.addHandler(handleAdd, E_TOUCH);
-  editBtn.addHandler(handleEdit, E_TOUCH);
-  deleteBtn.addHandler(handleDelete, E_TOUCH);
+  addOrDeleteBtn.addHandler(handleAddOrDelete, E_TOUCH);
 
   event_add1.addHandler(handleEventAdd1, E_TOUCH);
   event_sub1.addHandler(handleEventSub1, E_TOUCH);
@@ -1175,6 +1143,8 @@ void setup() {
   event_sub3.addHandler(handleEventSub3, E_TOUCH);
 
   setupBtn.addHandler(handleSetup, E_TOUCH);
+
+  allEventBtn.addHandler(handleAllEvent, E_TOUCH);
 
   Serial.begin(115200);
   if (!SD.begin(5)) {
@@ -1295,27 +1265,27 @@ void loop() {
           displayRefresh();
         }
         break;
-      case 3:  //edit_page
-        if (start_display_edit) {
-          displayEditPage();
-          start_display_edit = 0;
+      case 3:  //all_event_page
+        if (start_display_all_event) {
+          displayAllEvent();
+          start_display_all_event = 0;
         }
         if ((M5.BtnA.wasReleased() || M5.BtnA.pressedFor(1000, 200))) {
-          if (current_edit_page == 0) {
-            current_page = 2;
-            start_display_edit = 1;
+          if (current_all_event_page == 0) {
+            current_page = 0;
+            start_display_all_event = 1;
             displayRefresh();
           } else {
-            current_edit_page--;
+            current_all_event_page--;
             displayRefresh();
-            displayEditPage();
+            displayAllEvent();
           }
         }
         if (M5.BtnC.wasReleased() || M5.BtnC.pressedFor(1000, 200)) {
-          if (current_edit_page < 3) {
-            current_edit_page++;
+          if ((current_all_event_page + 1) * 9 < all_event_current_day) {
+            current_all_event_page++;
             displayRefresh();
-            displayEditPage();
+            displayAllEvent();
           }
         }
         break;
