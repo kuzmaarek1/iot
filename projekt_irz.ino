@@ -67,6 +67,9 @@ Button event_sub2(260, 140, 40, 35);
 Button event_add3(210, 190, 40, 35);
 Button event_sub3(260, 190, 40, 35);
 
+int isPressedEventAdd1, isPressedEventAdd2, isPressedEventAdd3 = 0;
+int isPressedEventSub1, isPressedEventSub2, isPressedEventSub3 = 0;
+
 //Ustawienie Wifi
 void setupWifi() {
   delay(10);
@@ -488,12 +491,11 @@ void displayAddPage() {
 
 void displayAllEvent() {
   M5.Lcd.setCursor(10, 22);
-  int all_page=0;
-  if(all_event_current_day % 9 == 0){
-    all_page=int(all_event_current_day/9);
-  }
-  else{
-    all_page=int(all_event_current_day/9)+1;
+  int all_page = 0;
+  if (all_event_current_day % 9 == 0) {
+    all_page = int(all_event_current_day / 9);
+  } else {
+    all_page = int(all_event_current_day / 9) + 1;
   }
 
   M5.Lcd.printf("WYDARZENIA %02d.%02d.%04d %d/%d", current_data, current_month, current_year, 1 + current_all_event_page, all_page);
@@ -792,188 +794,230 @@ void readEvent() {
 }
 
 void handleEventAdd1(Event& e) {
-  if (checkSetupTime == 0) {
-    if (setup_day < 31) {
-      setup_day++;
-      displayRefresh();
-      start_setup = 1;
-    }
-  } else if (checkSetupTime == -1) {
-    if (setup_hours < 23) {
-      setup_hours++;
-      displayRefresh();
-      start_setup = 1;
-    }
-  } else if (current_page == 1) {
-    if (current_add_page == 0) {
-      if (event_day < 31) {
-        event_day++;
+  Button& b = *e.button;
+  isPressedEventAdd1 = b.isPressed();
+}
+
+void actionEventAdd1() {
+  if (isPressedEventAdd1) {
+    if (checkSetupTime == 0) {
+      if (setup_day < 31) {
+        setup_day++;
         displayRefresh();
-        start_display_add = 1;
+        start_setup = 1;
       }
-    } else if (current_add_page == 1) {
-      if (event_hours_start < 23) {
-        event_hours_start++;
+    } else if (checkSetupTime == -1) {
+      if (setup_hours < 23) {
+        setup_hours++;
         displayRefresh();
-        start_display_add = 1;
+        start_setup = 1;
       }
-    } else if (current_add_page == 2) {
-      if (event_hours_end < 23) {
-        event_hours_end++;
-        displayRefresh();
-        start_display_add = 1;
-      }
-    } else if (current_add_page == 3) {
-      if (event_type_number != 0) {
-        event_type_number--;
-        displayRefresh();
-        start_display_add = 1;
+    } else if (current_page == 1) {
+      if (current_add_page == 0) {
+        if (event_day < 31) {
+          event_day++;
+          displayRefresh();
+          start_display_add = 1;
+        }
+      } else if (current_add_page == 1) {
+        if (event_hours_start < 23) {
+          event_hours_start++;
+          displayRefresh();
+          start_display_add = 1;
+        }
+      } else if (current_add_page == 2) {
+        if (event_hours_end < 23) {
+          event_hours_end++;
+          displayRefresh();
+          start_display_add = 1;
+        }
+      } else if (current_add_page == 3) {
+        if (event_type_number != 0) {
+          event_type_number--;
+          displayRefresh();
+          start_display_add = 1;
+        }
       }
     }
   }
 }
 
 void handleEventSub1(Event& e) {
-  if (checkSetupTime == 0) {
-    if (setup_day != 1) {
-      setup_day--;
-      displayRefresh();
-      start_setup = 1;
-    }
-  } else if (checkSetupTime == -1) {
-    if (setup_hours != 0) {
-      setup_hours--;
-      displayRefresh();
-      start_setup = 1;
-    }
-  } else if (current_page == 1) {
-    if (current_add_page == 0) {
-      if (event_day != 1) {
-        event_day--;
+  Button& b = *e.button;
+  isPressedEventSub1 = b.isPressed();
+}
+
+void actionEventSub1() {
+  if (isPressedEventSub1) {
+    if (checkSetupTime == 0) {
+      if (setup_day != 1) {
+        setup_day--;
         displayRefresh();
-        start_display_add = 1;
+        start_setup = 1;
       }
-    } else if (current_add_page == 1) {
-      if (event_hours_start != 0) {
-        event_hours_start--;
+    } else if (checkSetupTime == -1) {
+      if (setup_hours != 0) {
+        setup_hours--;
         displayRefresh();
-        start_display_add = 1;
+        start_setup = 1;
       }
-    } else if (current_add_page == 2) {
-      if (event_hours_end != 0) {
-        event_hours_end--;
-        displayRefresh();
-        start_display_add = 1;
-      }
-    } else if (current_add_page == 3) {
-      if (event_type_number < 14) {
-        event_type_number++;
-        displayRefresh();
-        start_display_add = 1;
+    } else if (current_page == 1) {
+      if (current_add_page == 0) {
+        if (event_day != 1) {
+          event_day--;
+          displayRefresh();
+          start_display_add = 1;
+        }
+      } else if (current_add_page == 1) {
+        if (event_hours_start != 0) {
+          event_hours_start--;
+          displayRefresh();
+          start_display_add = 1;
+        }
+      } else if (current_add_page == 2) {
+        if (event_hours_end != 0) {
+          event_hours_end--;
+          displayRefresh();
+          start_display_add = 1;
+        }
+      } else if (current_add_page == 3) {
+        if (event_type_number < 14) {
+          event_type_number++;
+          displayRefresh();
+          start_display_add = 1;
+        }
       }
     }
   }
 }
 
 void handleEventAdd2(Event& e) {
-  if (checkSetupTime == 0) {
-    if (setup_month < 12) {
-      setup_month++;
-      displayRefresh();
-      start_setup = 1;
-    }
-  } else if (checkSetupTime == -1) {
-    if (setup_minutes < 59) {
-      setup_minutes++;
-      displayRefresh();
-      start_setup = 1;
-    }
-  } else if (current_page == 1) {
-    if (current_add_page == 0) {
-      if (event_month < 12) {
-        event_month++;
+  Button& b = *e.button;
+  isPressedEventAdd2 = b.isPressed();
+}
+
+void actionEventAdd2() {
+  if (isPressedEventAdd2) {
+    if (checkSetupTime == 0) {
+      if (setup_month < 12) {
+        setup_month++;
         displayRefresh();
-        start_display_add = 1;
+        start_setup = 1;
       }
-    } else if (current_add_page == 1) {
-      if (event_minutes_start < 59) {
-        event_minutes_start++;
+    } else if (checkSetupTime == -1) {
+      if (setup_minutes < 59) {
+        setup_minutes++;
         displayRefresh();
-        start_display_add = 1;
+        start_setup = 1;
       }
-    } else if (current_add_page == 2) {
-      if (event_minutes_end < 59) {
-        event_minutes_end++;
-        displayRefresh();
-        start_display_add = 1;
+    } else if (current_page == 1) {
+      if (current_add_page == 0) {
+        if (event_month < 12) {
+          event_month++;
+          displayRefresh();
+          start_display_add = 1;
+        }
+      } else if (current_add_page == 1) {
+        if (event_minutes_start < 59) {
+          event_minutes_start++;
+          displayRefresh();
+          start_display_add = 1;
+        }
+      } else if (current_add_page == 2) {
+        if (event_minutes_end < 59) {
+          event_minutes_end++;
+          displayRefresh();
+          start_display_add = 1;
+        }
       }
     }
   }
 }
 
 void handleEventSub2(Event& e) {
-  if (checkSetupTime == 0) {
-    if (setup_month != 1) {
-      setup_month--;
-      displayRefresh();
-      start_setup = 1;
-    }
-  } else if (checkSetupTime == -1) {
-    if (setup_minutes != 0) {
-      setup_minutes--;
-      displayRefresh();
-      start_setup = 1;
-    }
-  } else if (current_page == 1) {
-    if (current_add_page == 0) {
-      if (event_month != 1) {
-        event_month--;
+  Button& b = *e.button;
+  isPressedEventSub2 = b.isPressed();
+}
+
+void actionEventSub2() {
+  if (isPressedEventSub2) {
+    if (checkSetupTime == 0) {
+      if (setup_month != 1) {
+        setup_month--;
         displayRefresh();
-        start_display_add = 1;
+        start_setup = 1;
       }
-    } else if (current_add_page == 1) {
-      if (event_minutes_start != 0) {
-        event_minutes_start--;
+    } else if (checkSetupTime == -1) {
+      if (setup_minutes != 0) {
+        setup_minutes--;
         displayRefresh();
-        start_display_add = 1;
+        start_setup = 1;
       }
-    } else if (current_add_page == 2) {
-      if (event_minutes_end != 0) {
-        event_minutes_end--;
-        displayRefresh();
-        start_display_add = 1;
+    } else if (current_page == 1) {
+      if (current_add_page == 0) {
+        if (event_month != 1) {
+          event_month--;
+          displayRefresh();
+          start_display_add = 1;
+        }
+      } else if (current_add_page == 1) {
+        if (event_minutes_start != 0) {
+          event_minutes_start--;
+          displayRefresh();
+          start_display_add = 1;
+        }
+      } else if (current_add_page == 2) {
+        if (event_minutes_end != 0) {
+          event_minutes_end--;
+          displayRefresh();
+          start_display_add = 1;
+        }
       }
     }
   }
 }
 
 void handleEventAdd3(Event& e) {
-  if (checkSetupTime == 0) {
-    setup_year++;
-    displayRefresh();
-    start_setup = 1;
-  } else if (current_page == 1) {
-    if (current_add_page == 0) {
-      event_year++;
+  Button& b = *e.button;
+  isPressedEventAdd3 = b.isPressed();
+}
+
+void actionEventAdd3() {
+  if (isPressedEventAdd3) {
+    if (checkSetupTime == 0) {
+      setup_year++;
       displayRefresh();
-      start_display_add = 1;
+      start_setup = 1;
+    } else if (current_page == 1) {
+      if (current_add_page == 0) {
+        event_year++;
+        displayRefresh();
+        start_display_add = 1;
+      }
     }
   }
 }
 
 void handleEventSub3(Event& e) {
-  if (checkSetupTime == 0) {
-    if (setup_year > 2023) {
-      setup_year--;
-      displayRefresh();
-      start_setup = 1;
-    }
-  } else if (current_page == 1) {
-    M5.Rtc.GetDate(&RTCDate);
-    if (current_add_page == 0 && event_year > RTCDate.Year) {
-      event_year--;
-      displayRefresh();
-      start_display_add = 1;
+  Button& b = *e.button;
+  isPressedEventSub3 = b.isPressed();
+}
+
+void actionEventSub3() {
+  if (isPressedEventSub3) {
+    if (checkSetupTime == 0) {
+      if (setup_year > 2023) {
+        setup_year--;
+        displayRefresh();
+        start_setup = 1;
+      }
+    } else if (current_page == 1) {
+      M5.Rtc.GetDate(&RTCDate);
+      if (current_add_page == 0 && event_year > RTCDate.Year) {
+        event_year--;
+        displayRefresh();
+        start_display_add = 1;
+      }
     }
   }
 }
@@ -1112,7 +1156,7 @@ void handleSetup(Event& e) {
 }
 
 void handleAllEvent(Event& e) {
-  if (checkSetupTime > 0 && current_page == 0 && all_event_current_day!=0) {
+  if (checkSetupTime > 0 && current_page == 0 && all_event_current_day != 0) {
     current_page = 3;
     start_display_main = 1;
     start_display_all_event = 1;
@@ -1125,7 +1169,6 @@ void setup() {
   M5.begin();
   setupWifi();
   setTimeAndData();
-
   delay(1000);
   M5.Lcd.fillScreen(BLACK);
   M5.Lcd.setTextSize(2);
@@ -1133,17 +1176,14 @@ void setup() {
   detailsBtn.addHandler(handleDetails, E_TOUCH);
   addOrDeleteBtn.addHandler(handleAddOrDelete, E_TOUCH);
 
-  event_add1.addHandler(handleEventAdd1, E_TOUCH);
-  event_sub1.addHandler(handleEventSub1, E_TOUCH);
-
-  event_add2.addHandler(handleEventAdd2, E_TOUCH);
-  event_sub2.addHandler(handleEventSub2, E_TOUCH);
-
-  event_add3.addHandler(handleEventAdd3, E_TOUCH);
-  event_sub3.addHandler(handleEventSub3, E_TOUCH);
+  event_add1.addHandler(handleEventAdd1, E_TOUCH + E_RELEASE);
+  event_sub1.addHandler(handleEventSub1, E_TOUCH + E_RELEASE);
+  event_add2.addHandler(handleEventAdd2, E_TOUCH + E_RELEASE);
+  event_sub2.addHandler(handleEventSub2, E_TOUCH + E_RELEASE);
+  event_add3.addHandler(handleEventAdd3, E_TOUCH + E_RELEASE);
+  event_sub3.addHandler(handleEventSub3, E_TOUCH + E_RELEASE);
 
   setupBtn.addHandler(handleSetup, E_TOUCH);
-
   allEventBtn.addHandler(handleAllEvent, E_TOUCH);
 
   Serial.begin(115200);
@@ -1154,6 +1194,12 @@ void setup() {
 
 void loop() {
   M5.update();
+  actionEventAdd1();
+  actionEventAdd2();
+  actionEventAdd3();
+  actionEventSub1();
+  actionEventSub2();
+  actionEventSub3();
   if (checkSetupTime > 0) {
     displayTime();
     displayDate();
