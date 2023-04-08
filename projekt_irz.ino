@@ -1494,7 +1494,7 @@ void loop() {
     displayDate();
     isSetupFirst = 0;
   
-    if (RTCtime.Hours == 0 && RTCtime.Minutes == 0 && RTCtime.Minutes<2) {
+    if (RTCtime.Hours == 0 && RTCtime.Minutes == 0 && RTCtime.Seconds<2) {
       setupParametres();
       setupData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
       findEvent();
