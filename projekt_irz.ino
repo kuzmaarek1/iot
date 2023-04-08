@@ -306,17 +306,21 @@ void displayMainPage() {
       if (current_events_count - 1 != i) {
         if ((all_event_current_startHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i] && all_event_current_startMinutesRead[current_events_count - 1] == all_event_current_startMinutesRead[i])
 
-            //czas rozpoczecia1<czas rozpoczecia2 && czas zakonczenia1>czas zakonczenia2
-            || ((all_event_current_startHoursRead[current_events_count - 1] < all_event_current_startHoursRead[i]
-                 || (all_event_current_startHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i]) && all_event_current_startMinutesRead[current_events_count - 1] < all_event_current_startMinutesRead[i])
-                && (all_event_current_endHoursRead[current_events_count - 1] > all_event_current_endHoursRead[i]
-                    || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] > all_event_current_endMinutesRead[i]))
+            //czas rozpoczecia1<czas rozpoczecia2 && czas zakonczenia1>czas zakonczenia2  && czas start1<czas zakonczenia2
+            || !(((all_event_current_startHoursRead[current_events_count - 1] < all_event_current_startHoursRead[i]
+                   || (all_event_current_startHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i]) && all_event_current_startMinutesRead[current_events_count - 1] < all_event_current_startMinutesRead[i])
+                  && (all_event_current_endHoursRead[current_events_count - 1] < all_event_current_endHoursRead[i]
+                      || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] < all_event_current_endMinutesRead[i])
+                  && (all_event_current_endHoursRead[current_events_count - 1] < all_event_current_startHoursRead[i]
+                      || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] <= all_event_current_startMinutesRead[i]))
 
-            //czas rozpoczecia1>czas rozpoczecia2 && czas zakonczenia1<czas zakonczenia2
-            || ((all_event_current_startHoursRead[current_events_count - 1] > all_event_current_startHoursRead[i]
-                 || (all_event_current_startHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i]) && all_event_current_startMinutesRead[current_events_count - 1] > all_event_current_startMinutesRead[i])
-                && (all_event_current_endHoursRead[current_events_count - 1] < all_event_current_endHoursRead[i]
-                    || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] < all_event_current_endMinutesRead[i]))) {
+                 //czas rozpoczecia1>czas rozpoczecia2 && czas zakonczenia1>czas zakonczenia2 && czas start1>czas zakonczenia2
+                 || ((all_event_current_startHoursRead[current_events_count - 1] > all_event_current_startHoursRead[i]
+                      || (all_event_current_startHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i]) && all_event_current_startMinutesRead[current_events_count - 1] > all_event_current_startMinutesRead[i])
+                     && (all_event_current_endHoursRead[current_events_count - 1] > all_event_current_endHoursRead[i]
+                         || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] > all_event_current_endMinutesRead[i])
+                     && (all_event_current_startHoursRead[current_events_count - 1] > all_event_current_endHoursRead[i]
+                         || (all_event_current_startHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_startMinutesRead[current_events_count - 1] >= all_event_current_endMinutesRead[i])))) {
           M5.Lcd.setCursor(110, 125);
           M5.Lcd.printf("%s*", event_type[all_event_current_typesRead[current_events_count - 1]]);
           break;
@@ -557,41 +561,60 @@ void displayAllEvent() {
   }
 
   M5.Lcd.printf("WYDARZENIA %02d.%02d.%04d %d/%d", current_data, current_month, current_year, 1 + current_all_event_page, all_page);
-
+  int count = 0;
+  int numberArray = 0;
   for (int i = 0; i < 9; i++) {
     if (i + current_all_event_page * 9 == all_event_current_day) break;
     M5.Lcd.setCursor(20, 45 + i * 20);
-
+    count = 0;
+    numberArray = 0;
     for (int j = 0; j < all_event_current_day; j++) {
       if ((i + current_all_event_page * 9) != j) {
         if ((all_event_current_startHoursRead[i + current_all_event_page * 9] == all_event_current_startHoursRead[j] && all_event_current_startMinutesRead[i + current_all_event_page * 9] == all_event_current_startMinutesRead[j])
-            //czas rozpoczecia1 <czas rozpoczecia2 && czas zakonczenia1>czas zakonczenia2
-            || ((all_event_current_startHoursRead[i + current_all_event_page * 9] < all_event_current_startHoursRead[j]
+            //czas rozpoczecia1 <czas rozpoczecia2 && czas zakonczenia1<czas zakonczenia2 && czaszakonczenia1<czas_ropoczecia2
+            || !(((all_event_current_startHoursRead[i + current_all_event_page * 9] < all_event_current_startHoursRead[j]
                    || (all_event_current_startHoursRead[i + current_all_event_page * 9] == all_event_current_startHoursRead[j]) && all_event_current_startMinutesRead[i + current_all_event_page * 9] < all_event_current_startMinutesRead[j])
-                  && (all_event_current_endHoursRead[i + current_all_event_page * 9] > all_event_current_endHoursRead[j]
-                      || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] > all_event_current_endMinutesRead[j]))
+                  && (all_event_current_endHoursRead[i + current_all_event_page * 9] < all_event_current_endHoursRead[j]
+                      || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] < all_event_current_endMinutesRead[j])
+                  && (all_event_current_endHoursRead[i + current_all_event_page * 9] < all_event_current_startHoursRead[j]
+                      || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_startHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] <= all_event_current_startMinutesRead[j]))
 
-                 //czas rozpoczecia1>czas rozpoczecia2 && czas zakonczenia1<czas zakonczenia2
+                 //czas rozpoczecia1>czas rozpoczecia2 && czas zakonczenia1>czas zakonczenia2 && czasrozpoczecia1>czas_zakonczeniaa2
                  || ((all_event_current_startHoursRead[i + current_all_event_page * 9] > all_event_current_startHoursRead[j]
                       || (all_event_current_startHoursRead[i + current_all_event_page * 9] == all_event_current_startHoursRead[j]) && all_event_current_startMinutesRead[i + current_all_event_page * 9] > all_event_current_startMinutesRead[j])
-                     && (all_event_current_endHoursRead[i + current_all_event_page * 9] < all_event_current_endHoursRead[j]
-                         || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] < all_event_current_endMinutesRead[j])))
+                     && (all_event_current_endHoursRead[i + current_all_event_page * 9] > all_event_current_endHoursRead[j]
+                         || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] > all_event_current_endMinutesRead[j])
+                     && (all_event_current_startHoursRead[i + current_all_event_page * 9] > all_event_current_endHoursRead[j]
+                         || (all_event_current_startHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_startMinutesRead[i + current_all_event_page * 9] >= all_event_current_endMinutesRead[j]))))
 
         {
-          M5.Lcd.printf("%02d:%02d-%02d:%02d %s*",
-                        all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
-                        all_event_current_endHoursRead[i + current_all_event_page * 9], all_event_current_endMinutesRead[i + current_all_event_page * 9],
-                        event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
-          break;
+          if (count == 0) {
+            if (j < (i + current_all_event_page * 9)) {
+              numberArray = j;
+            } else {
+              numberArray = i + current_all_event_page * 9;
+            }
+          }
+          count++;
         }
       }
-      if (j == all_event_current_day - 1) {
-        M5.Lcd.printf("%02d:%02d-%02d:%02d %s",
-                      all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
-                      all_event_current_endHoursRead[i + current_all_event_page * 9], all_event_current_endMinutesRead[i + current_all_event_page * 9],
-                      event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
-        break;
-      }
+    }
+    M5.Lcd.printf("%02d:%02d-%02d:%02d %s",
+                  all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
+                  all_event_current_endHoursRead[i + current_all_event_page * 9], all_event_current_endMinutesRead[i + current_all_event_page * 9],
+                  event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
+    if (count != 0) {
+      if (numberArray % 4 == 0)
+        M5.Lcd.setTextColor(RED, BLACK);
+      else if (numberArray % 4 == 1)
+        M5.Lcd.setTextColor(GREEN, BLACK);
+      else if (numberArray % 4 == 2)
+        M5.Lcd.setTextColor(BLUE, BLACK);
+      else if (numberArray % 4 == 3)
+        M5.Lcd.setTextColor(YELLOW, BLACK);
+
+      M5.Lcd.printf("%d*", count);
+      M5.Lcd.setTextColor(WHITE, BLACK);
     }
   }
 }
@@ -893,10 +916,18 @@ void actionEventAdd1() {
         setup_day++;
         displayRefresh();
         start_setup = 1;
+      } else {
+        setup_day = 1;
+        displayRefresh();
+        start_setup = 1;
       }
     } else if (checkSetupTime == -1) {
       if (setup_hours < 23) {
         setup_hours++;
+        displayRefresh();
+        start_setup = 1;
+      } else {
+        setup_hours = 0;
         displayRefresh();
         start_setup = 1;
       }
@@ -906,10 +937,18 @@ void actionEventAdd1() {
           event_day++;
           displayRefresh();
           start_display_add = 1;
+        } else {
+          event_day = 1;
+          displayRefresh();
+          start_display_add = 1;
         }
       } else if (current_add_page == 1) {
         if (event_hours_start < 23) {
           event_hours_start++;
+          displayRefresh();
+          start_display_add = 1;
+        } else {
+          event_hours_start = 0;
           displayRefresh();
           start_display_add = 1;
         }
@@ -918,10 +957,18 @@ void actionEventAdd1() {
           event_hours_end++;
           displayRefresh();
           start_display_add = 1;
+        } else {
+          event_hours_end = 0;
+          displayRefresh();
+          start_display_add = 1;
         }
       } else if (current_add_page == 3) {
         if (event_type_number != 0) {
           event_type_number--;
+          displayRefresh();
+          start_display_add = 1;
+        } else {
+          event_type_number = 14;
           displayRefresh();
           start_display_add = 1;
         }
@@ -942,10 +989,18 @@ void actionEventSub1() {
         setup_day--;
         displayRefresh();
         start_setup = 1;
+      } else {
+        setup_day = 31;
+        displayRefresh();
+        start_setup = 1;
       }
     } else if (checkSetupTime == -1) {
       if (setup_hours != 0) {
         setup_hours--;
+        displayRefresh();
+        start_setup = 1;
+      } else {
+        setup_hours = 23;
         displayRefresh();
         start_setup = 1;
       }
@@ -955,10 +1010,18 @@ void actionEventSub1() {
           event_day--;
           displayRefresh();
           start_display_add = 1;
+        } else {
+          event_day = 31;
+          displayRefresh();
+          start_display_add = 1;
         }
       } else if (current_add_page == 1) {
         if (event_hours_start != 0) {
           event_hours_start--;
+          displayRefresh();
+          start_display_add = 1;
+        } else {
+          event_hours_start = 23;
           displayRefresh();
           start_display_add = 1;
         }
@@ -967,10 +1030,18 @@ void actionEventSub1() {
           event_hours_end--;
           displayRefresh();
           start_display_add = 1;
+        } else {
+          event_hours_end = 23;
+          displayRefresh();
+          start_display_add = 1;
         }
       } else if (current_add_page == 3) {
         if (event_type_number < 14) {
           event_type_number++;
+          displayRefresh();
+          start_display_add = 1;
+        } else {
+          event_type_number = 0;
           displayRefresh();
           start_display_add = 1;
         }
@@ -991,10 +1062,18 @@ void actionEventAdd2() {
         setup_month++;
         displayRefresh();
         start_setup = 1;
+      } else {
+        setup_month = 1;
+        displayRefresh();
+        start_setup = 1;
       }
     } else if (checkSetupTime == -1) {
       if (setup_minutes < 59) {
         setup_minutes++;
+        displayRefresh();
+        start_setup = 1;
+      } else {
+        setup_minutes = 0;
         displayRefresh();
         start_setup = 1;
       }
@@ -1004,16 +1083,28 @@ void actionEventAdd2() {
           event_month++;
           displayRefresh();
           start_display_add = 1;
+        } else {
+          event_month = 1;
+          displayRefresh();
+          start_display_add = 1;
         }
       } else if (current_add_page == 1) {
         if (event_minutes_start < 59) {
           event_minutes_start++;
           displayRefresh();
           start_display_add = 1;
+        } else {
+          event_minutes_start = 0;
+          displayRefresh();
+          start_display_add = 1;
         }
       } else if (current_add_page == 2) {
         if (event_minutes_end < 59) {
           event_minutes_end++;
+          displayRefresh();
+          start_display_add = 1;
+        } else {
+          event_minutes_end = 0;
           displayRefresh();
           start_display_add = 1;
         }
@@ -1034,10 +1125,18 @@ void actionEventSub2() {
         setup_month--;
         displayRefresh();
         start_setup = 1;
+      } else {
+        setup_month = 12;
+        displayRefresh();
+        start_setup = 1;
       }
     } else if (checkSetupTime == -1) {
       if (setup_minutes != 0) {
         setup_minutes--;
+        displayRefresh();
+        start_setup = 1;
+      } else {
+        setup_minutes = 59;
         displayRefresh();
         start_setup = 1;
       }
@@ -1047,16 +1146,28 @@ void actionEventSub2() {
           event_month--;
           displayRefresh();
           start_display_add = 1;
+        } else {
+          event_month = 12;
+          displayRefresh();
+          start_display_add = 1;
         }
       } else if (current_add_page == 1) {
         if (event_minutes_start != 0) {
           event_minutes_start--;
           displayRefresh();
           start_display_add = 1;
+        } else {
+          event_minutes_start = 59;
+          displayRefresh();
+          start_display_add = 1;
         }
       } else if (current_add_page == 2) {
         if (event_minutes_end != 0) {
           event_minutes_end--;
+          displayRefresh();
+          start_display_add = 1;
+        } else {
+          event_minutes_end = 59;
           displayRefresh();
           start_display_add = 1;
         }
