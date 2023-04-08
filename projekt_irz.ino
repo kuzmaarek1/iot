@@ -19,6 +19,8 @@ RTC_DateTypeDef RTCDate;
 char timeStrbuff[64];
 char dateStrbuff[64];
 int checkWiFiCount = 0, checkWiFi = 0, checkSetupTime = 0;
+int isFastLed = 0;
+char booleanFastLed[3][4] = { "NIE", "TAK" };
 int isSetupFirst = 1, start_setup = 1;
 int setup_hours = 0, setup_minutes = 0, setup_day = 1, setup_month = 1, setup_year = 2023;
 
@@ -125,7 +127,12 @@ void setTimeAndData() {
     struct tm timeinfo;
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
     if (getLocalTime(&timeinfo)) {
-      checkSetupTime = 1;
+      checkSetupTime = -2;
+      setup_hours = timeinfo.tm_hour;
+      setup_minutes = timeinfo.tm_min;
+      setup_year = timeinfo.tm_year + 1900;
+      setup_month = timeinfo.tm_mon + 1;
+      setup_day = timeinfo.tm_mday;
       setupTime(timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
       setupData(timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
     }
@@ -705,7 +712,7 @@ void displayBannerError() {
 }
 
 void handleAddOrDelete(Event& e) {
-  if (checkSetupTime == -1) {
+  if (checkSetupTime == -2) {
     setupTime(setup_hours, setup_minutes, 0);
     setupData(setup_year, setup_month, setup_day);
     setupParametres();
@@ -979,6 +986,12 @@ void actionEventAdd1() {
         displayRefresh();
         start_setup = 1;
       }
+    } else if (checkSetupTime == -2) {
+      if (isFastLed == 1)
+        isFastLed = 0;
+      else isFastLed = 1;
+      displayRefresh();
+      start_setup = 1;
     } else if (current_page == 1) {
       if (current_add_page == 0) {
         if (event_day < 31) {
@@ -1052,6 +1065,12 @@ void actionEventSub1() {
         displayRefresh();
         start_setup = 1;
       }
+    } else if (checkSetupTime == -2) {
+      if (isFastLed == 1)
+        isFastLed = 0;
+      else isFastLed = 1;
+      displayRefresh();
+      start_setup = 1;
     } else if (current_page == 1) {
       if (current_add_page == 0) {
         if (event_day != 1) {
@@ -1285,7 +1304,7 @@ void displaySetupDateAndTime() {
       M5.Lcd.print("Ustaw date");
 
       M5.Lcd.setCursor(260, 60);
-      M5.Lcd.print("1/2");
+      M5.Lcd.print("1/3");
       M5.Lcd.setCursor(30, 100);
       M5.Lcd.print("Dzien");
       M5.Lcd.drawRect(130, 90, 70, 35, WHITE);
@@ -1338,7 +1357,7 @@ void displaySetupDateAndTime() {
         M5.Lcd.print("USTAWIENIA");
       }
       M5.Lcd.setCursor(260, 60);
-      M5.Lcd.print("2/2");
+      M5.Lcd.print("2/3");
       M5.Lcd.setCursor(145, 60);
       M5.Lcd.print("Czas");
 
@@ -1371,10 +1390,50 @@ void displaySetupDateAndTime() {
       M5.Lcd.setTextColor(WHITE, BLACK);
 
       M5.Lcd.setTextSize(2);
-      M5.Lcd.setCursor(50, 178);
+      M5.Lcd.setCursor(50, 198);
       M5.Lcd.print("Data");
-      M5.Lcd.setCursor(150, 178);
+      M5.Lcd.setCursor(150, 198);
       M5.Lcd.printf("%02d.%02d.%04d", setup_day, setup_month, setup_year);
+      break;
+    case -2:  //Diody
+      if (checkWiFi == 0) {
+        M5.Lcd.setCursor(20, 30);
+        M5.Lcd.print("BRAK POLACZENIA Z WI-FI");
+      } else {
+        M5.Lcd.setCursor(100, 30);
+        M5.Lcd.print("USTAWIENIA");
+      }
+
+      M5.Lcd.setCursor(260, 60);
+      M5.Lcd.print("3/3");
+      M5.Lcd.setCursor(140, 60);
+      M5.Lcd.print("Diody");
+
+      M5.Lcd.setCursor(30, 100);
+      M5.Lcd.print("Swieci");
+      M5.Lcd.drawRect(130, 90, 70, 35, WHITE);
+      M5.Lcd.setCursor(148, 100);
+      M5.Lcd.printf("%s", booleanFastLed[isFastLed]);
+      M5.Lcd.fillRect(210, 90, 40, 35, BLUE);
+      M5.Lcd.setTextColor(WHITE, BLUE);
+      M5.Lcd.setCursor(225, 100);
+      M5.Lcd.print("+");
+      M5.Lcd.fillRect(260, 90, 40, 35, BLUE);
+      M5.Lcd.setCursor(275, 100);
+      M5.Lcd.print("-");
+      M5.Lcd.setTextColor(WHITE, BLACK);
+
+      M5.Lcd.setTextSize(2);
+      M5.Lcd.setCursor(50, 148);
+      M5.Lcd.print("Data");
+      M5.Lcd.setCursor(150, 148);
+      M5.Lcd.printf("%02d.%02d.%04d", setup_day, setup_month, setup_year);
+
+      M5.Lcd.setTextSize(2);
+      M5.Lcd.setCursor(50, 168);
+      M5.Lcd.print("Godzina");
+      M5.Lcd.setCursor(150, 168);
+      M5.Lcd.printf("%02d:%02d", setup_hours, setup_minutes);
 
       M5.Lcd.setTextSize(2);
       M5.Lcd.fillRect(110, 200, 100, 30, BLUE);
@@ -1466,8 +1525,14 @@ void loop() {
   }
 
   if (count_alarm != 0) {
-    for (int i = 0; i < LEDS_NUM; i++) {
-      ledsBuff[i].setRGB(100, 0, 0);
+    if (isFastLed == 1) {
+      for (int i = 0; i < LEDS_NUM; i++) {
+        ledsBuff[i].setRGB(100, 0, 0);
+      }
+    } else {
+      for (int i = 0; i < LEDS_NUM; i++) {
+        ledsBuff[i].setRGB(0, 0, 0);
+      }
     }
     M5.Lcd.setCursor(110, 1);
     M5.Lcd.setTextSize(2);
@@ -1493,12 +1558,13 @@ void loop() {
     displayTime();
     displayDate();
     isSetupFirst = 0;
-  
-    if (RTCtime.Hours == 0 && RTCtime.Minutes == 0 && RTCtime.Seconds<2) {
+
+    if (RTCtime.Hours == 23 && RTCtime.Minutes == 59 && RTCtime.Seconds > 58) {
+      delay(2000);
       setupParametres();
       setupData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
       findEvent();
-      delay(2000);
+      delay(1000);
       current_page = 0;
       displayRefresh();
     }
@@ -1624,7 +1690,7 @@ void loop() {
         displayRefresh();
       }
     }
-    if ((M5.BtnC.wasReleased() || M5.BtnC.pressedFor(1000, 200)) && checkSetupTime == 0) {
+    if ((M5.BtnC.wasReleased() || M5.BtnC.pressedFor(1000, 200)) && (checkSetupTime == 0 || checkSetupTime == -1)) {
       checkSetupTime--;
       if (!checkDayInMonth(31, setup_month)) {
         if (checkDayInMonth(30, setup_month)) {
