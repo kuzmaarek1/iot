@@ -21,14 +21,13 @@ char dateStrbuff[64];
 int checkWiFiCount = 0, checkWiFi = 0, checkSetupTime = 0;
 int isSetupFirst = 1, start_setup = 1;
 int setup_hours = 0, setup_minutes = 0, setup_day = 1, setup_month = 1, setup_year = 2023;
-int changeDate = 1;
 
 //Zmienne opowiedzialne za wyświetlanie odpowiednich rzeczy na ekranie
 int current_page = 0, current_main_page = 0, current_add_page = 0, current_all_event_page = 0;
 int start_display_main = 1, start_display_add = 1, start_display_all_event = 1, start_display_details = 1;
 int current_year, current_month, current_data;
 int current_events_count = 1;
-int count_alarm = 0;
+int count_alarm = 0, prev_count_alarm = 0;
 
 //Zmienne wykorzystywane podczas odczytywania lub zapisywania wartości do pliku
 int *dayRead, *monthRead, *yearRead, *startHoursRead, *startMinutesRead, *endHoursRead, *endMinutesRead, *typesRead;
@@ -710,7 +709,6 @@ void handleAddOrDelete(Event& e) {
     setupTime(setup_hours, setup_minutes, 0);
     setupData(setup_year, setup_month, setup_day);
     setupParametres();
-    changeDate = 0;
     current_page = 0;
     displayRefresh();
     checkSetupTime = 1;
@@ -1452,27 +1450,33 @@ void loop() {
 
   count_alarm = 0;
   for (int i = 0; i < all_event_today_day; i++) {
-    if (current_page == 0 && checkSetupTime > 0 && ((all_event_today_endHoursRead[i] == RTCtime.Hours && all_event_today_endMinutesRead[i] == RTCtime.Minutes) || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] == RTCtime.Minutes)) && 2 > RTCtime.Seconds) {
-      displayMainPage();
-    }
     if ((all_event_today_startHoursRead[i] < RTCtime.Hours || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] <= RTCtime.Minutes))
         && (all_event_today_endHoursRead[i] > RTCtime.Hours || (all_event_today_endHoursRead[i] == RTCtime.Hours && all_event_today_endMinutesRead[i] > RTCtime.Minutes))) {
       count_alarm++;
     }
   }
 
+  if (prev_count_alarm != count_alarm && current_page == 0 && checkSetupTime > 0) {
+    M5.Lcd.clear();
+    start_display_main = 1;
+    start_display_add = 1;
+    start_display_all_event = 1;
+    start_display_details = 1;
+    prev_count_alarm = count_alarm;
+  }
+
   if (count_alarm != 0) {
     for (int i = 0; i < LEDS_NUM; i++) {
       ledsBuff[i].setRGB(100, 0, 0);
     }
-    M5.Lcd.setCursor(115, 1);
+    M5.Lcd.setCursor(110, 1);
     M5.Lcd.setTextSize(2);
     M5.Lcd.printf("Alarm %d", count_alarm);
   } else {
     for (int i = 0; i < LEDS_NUM; i++) {
       ledsBuff[i].setRGB(0, 0, 0);
     }
-    M5.Lcd.setCursor(115, 1);
+    M5.Lcd.setCursor(110, 1);
     M5.Lcd.setTextSize(2);
     M5.Lcd.print("      ");
   }
@@ -1489,18 +1493,14 @@ void loop() {
     displayTime();
     displayDate();
     isSetupFirst = 0;
-
-    if (RTCtime.Hours == 0 && RTCtime.Minutes == 0 && changeDate) {
+  
+    if (RTCtime.Hours == 0 && RTCtime.Minutes == 0 && RTCtime.Minutes<2) {
       setupParametres();
       setupData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
-      delay(1000);
-      changeDate = 0;
+      findEvent();
+      delay(2000);
       current_page = 0;
       displayRefresh();
-    }
-
-    if (RTCtime.Hours == 0 && RTCtime.Minutes == 1 && changeDate) {
-      changeDate = 1;
     }
 
     switch (current_page) {
@@ -1620,7 +1620,6 @@ void loop() {
       if (checkSetupTime == 1) {
         setupParametres();
         setupCurrentData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
-        changeDate = 0;
         current_page = 0;
         displayRefresh();
       }
