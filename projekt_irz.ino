@@ -40,6 +40,7 @@ int searchEvent[7];
 int *all_event_current_startHoursRead, *all_event_current_startMinutesRead, *all_event_current_endHoursRead, *all_event_current_endMinutesRead, *all_event_current_typesRead;
 int *all_event_today_startHoursRead, *all_event_today_startMinutesRead, *all_event_today_endHoursRead, *all_event_today_endMinutesRead, *all_event_today_typesRead;
 int all_event_current_day, all_event_today_day = 0;
+int next_day, next_month, next_year;
 
 int event_day, event_month, event_year, event_hours_start, event_minutes_start, event_hours_end, event_minutes_end, event_type_number;
 char event_type[15][20] = {
@@ -541,12 +542,15 @@ void displayAddPage() {
       M5.Lcd.print("Koniec");
       M5.Lcd.setCursor(180, 170);
       M5.Lcd.printf("%02d:%02d", event_hours_end, event_minutes_end);
-
+      if ((event_hours_end == event_hours_start && event_minutes_end == event_minutes_start) || event_hours_end < event_hours_start || (event_hours_end == event_hours_start && event_minutes_end < event_minutes_start)) {
+        M5.Lcd.printf("*");
+      }
       M5.Lcd.fillRect(110, 200, 100, 30, BLUE);
       M5.Lcd.setCursor(132, 208);
       M5.Lcd.setTextColor(WHITE, BLUE);
       M5.Lcd.print("Dodaj");
       M5.Lcd.setTextColor(WHITE, BLACK);
+
       break;
   }
 }
@@ -679,6 +683,27 @@ void handleDetails(Event& e) {
   }
 }
 
+void displayBannerAdd() {
+  displayRefresh();
+  M5.Lcd.setTextColor(GREEN, BLACK);
+  M5.Lcd.setCursor(120, 110);
+  M5.Lcd.print("DODANO");
+  delay(2000);
+  M5.Rtc.GetDate(&RTCDate);
+  setupCurrentData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
+  delay(2000);
+  displayRefresh();
+}
+
+void displayBannerError() {
+  displayRefresh();
+  M5.Lcd.setCursor(5, 110);
+  M5.Lcd.setTextColor(RED, BLACK);
+  M5.Lcd.print("BLAD. SPROBOJ JESZCZE RAZ!");
+  delay(2000);
+  displayRefresh();
+}
+
 void handleAddOrDelete(Event& e) {
   if (checkSetupTime == -1) {
     setupTime(setup_hours, setup_minutes, 0);
@@ -712,24 +737,48 @@ void handleAddOrDelete(Event& e) {
       File file = SD.open("/events.txt", FILE_APPEND);
       if (!file)
         file = SD.open("/events.txt", FILE_WRITE);
-      if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
-                      event_day, event_month, event_year, event_hours_start, event_minutes_start, event_hours_end, event_minutes_end, event_type_number)) {
-        displayRefresh();
-        M5.Lcd.setTextColor(GREEN, BLACK);
-        M5.Lcd.setCursor(120, 110);
-        M5.Lcd.print("DODANO");
-        delay(2000);
-        M5.Rtc.GetDate(&RTCDate);
-        setupCurrentData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
-        delay(2000);
-        displayRefresh();
+      if ((event_hours_end == event_hours_start && event_minutes_end == event_minutes_start) || event_hours_end < event_hours_start || (event_hours_end == event_hours_start && event_minutes_end < event_minutes_start)) {
+        next_day = event_day; 
+        next_month = event_month;
+        next_year = event_year;
+        if (!checkDayInMonth(31, event_month)) {
+          if (checkDayInMonth(30, event_month)) {
+            if (event_day == 30) {
+              next_day = 1;
+              next_month = event_month + 1;
+            } else next_day = event_day + 1;
+          } else {
+            if (event_year % 4 == 0 && event_day == 29) {
+              next_day = 1;
+              next_month = 3;
+            } else if (event_year % 4 != 0 && event_day == 28) {
+              next_day = 1;
+              next_month = 3;
+            } else next_day = event_day + 1;
+          }
+        } else {
+          if (event_day == 31) {
+            next_day = 1;
+            next_month = event_month + 1;
+            if (event_month == 12) {
+              next_month = 1;
+              next_year = event_year + 1;
+            }
+          } else next_day = event_day + 1;
+        }
+        if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
+                        event_day, event_month, event_year, event_hours_start, event_minutes_start, 23, 59, event_type_number)
+            && file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
+                           next_day, next_month, next_year, 0, 0, event_hours_end, event_minutes_end, event_type_number)) {
+          displayBannerAdd();
+        } else {
+          displayBannerError();
+        }
+      } else if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
+                             event_day, event_month, event_year, event_hours_start, event_minutes_start, event_hours_end, event_minutes_end, event_type_number)) {
+        displayBannerAdd();
       } else {
-        displayRefresh();
-        M5.Lcd.setCursor(5, 110);
-        M5.Lcd.setTextColor(RED, BLACK);
-        M5.Lcd.print("BLAD. SPROBOJ JESZCZE RAZ!");
-        delay(2000);
-        displayRefresh();
+        displayBannerError();
       }
       file.close();
       setupParametres();
@@ -1521,15 +1570,6 @@ void loop() {
               event_day = RTCDate.Date;
               event_month = RTCDate.Month;
               event_year = RTCDate.Year;
-            }
-            if (current_add_page == 3 && ((event_hours_end == event_hours_start && event_minutes_end == event_minutes_start) || event_hours_end < event_hours_start || (event_hours_end == event_hours_start && event_minutes_end < event_minutes_start))) {
-              event_hours_end = 23;
-              event_minutes_end = 59;
-            } else if (RTCDate.Year == event_year && RTCDate.Month == event_month && RTCDate.Date == event_day && current_add_page == 3) {
-              if (event_hours_end < RTCtime.Hours || (event_hours_end == RTCtime.Hours && event_minutes_end < RTCtime.Minutes)) {
-                event_hours_end = RTCtime.Hours;
-                event_minutes_end = RTCtime.Minutes;
-              }
             }
             displayRefresh();
             displayAddPage();
