@@ -302,8 +302,32 @@ void displayMainPage() {
     M5.Lcd.setCursor(10, 160);
     M5.Lcd.printf("%02d:%02d", all_event_current_endHoursRead[current_events_count - 1], all_event_current_endMinutesRead[current_events_count - 1]);
 
-    M5.Lcd.setCursor(110, 125);
-    M5.Lcd.print(event_type[all_event_current_typesRead[current_events_count - 1]]);
+    for (int i = 0; i < all_event_current_day; i++) {
+      if (current_events_count - 1 != i) {
+        if ((all_event_current_startHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i] && all_event_current_startMinutesRead[current_events_count - 1] == all_event_current_startMinutesRead[i])
+
+            //czas rozpoczecia1<czas rozpoczecia2 && czas zakonczenia1>czas zakonczenia2
+            || ((all_event_current_startHoursRead[current_events_count - 1] < all_event_current_startHoursRead[i]
+                 || (all_event_current_startHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i]) && all_event_current_startMinutesRead[current_events_count - 1] < all_event_current_startMinutesRead[i])
+                && (all_event_current_endHoursRead[current_events_count - 1] > all_event_current_endHoursRead[i]
+                    || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] > all_event_current_endMinutesRead[i]))
+
+            //czas rozpoczecia1>czas rozpoczecia2 && czas zakonczenia1<czas zakonczenia2
+            || ((all_event_current_startHoursRead[current_events_count - 1] > all_event_current_startHoursRead[i]
+                 || (all_event_current_startHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i]) && all_event_current_startMinutesRead[current_events_count - 1] > all_event_current_startMinutesRead[i])
+                && (all_event_current_endHoursRead[current_events_count - 1] < all_event_current_endHoursRead[i]
+                    || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] < all_event_current_endMinutesRead[i]))) {
+          M5.Lcd.setCursor(110, 125);
+          M5.Lcd.printf("%s*", event_type[all_event_current_typesRead[current_events_count - 1]]);
+          break;
+        }
+      }
+      if (i == all_event_current_day - 1) {
+        M5.Lcd.setCursor(110, 125);
+        M5.Lcd.print(event_type[all_event_current_typesRead[current_events_count - 1]]);
+        break;
+      }
+    }
 
     M5.Lcd.setTextSize(2);
     M5.Lcd.fillRect(120, 100, 80, 20, BLUE);
@@ -537,10 +561,38 @@ void displayAllEvent() {
   for (int i = 0; i < 9; i++) {
     if (i + current_all_event_page * 9 == all_event_current_day) break;
     M5.Lcd.setCursor(20, 45 + i * 20);
-    M5.Lcd.printf("%02d:%02d-%02d:%02d %s",
-                  all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
-                  all_event_current_endHoursRead[i + current_all_event_page * 9], all_event_current_endMinutesRead[i + current_all_event_page * 9],
-                  event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
+
+    for (int j = 0; j < all_event_current_day; j++) {
+      if ((i + current_all_event_page * 9) != j) {
+        if ((all_event_current_startHoursRead[i + current_all_event_page * 9] == all_event_current_startHoursRead[j] && all_event_current_startMinutesRead[i + current_all_event_page * 9] == all_event_current_startMinutesRead[j])
+            //czas rozpoczecia1 <czas rozpoczecia2 && czas zakonczenia1>czas zakonczenia2
+            || ((all_event_current_startHoursRead[i + current_all_event_page * 9] < all_event_current_startHoursRead[j]
+                   || (all_event_current_startHoursRead[i + current_all_event_page * 9] == all_event_current_startHoursRead[j]) && all_event_current_startMinutesRead[i + current_all_event_page * 9] < all_event_current_startMinutesRead[j])
+                  && (all_event_current_endHoursRead[i + current_all_event_page * 9] > all_event_current_endHoursRead[j]
+                      || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] > all_event_current_endMinutesRead[j]))
+
+                 //czas rozpoczecia1>czas rozpoczecia2 && czas zakonczenia1<czas zakonczenia2
+                 || ((all_event_current_startHoursRead[i + current_all_event_page * 9] > all_event_current_startHoursRead[j]
+                      || (all_event_current_startHoursRead[i + current_all_event_page * 9] == all_event_current_startHoursRead[j]) && all_event_current_startMinutesRead[i + current_all_event_page * 9] > all_event_current_startMinutesRead[j])
+                     && (all_event_current_endHoursRead[i + current_all_event_page * 9] < all_event_current_endHoursRead[j]
+                         || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] < all_event_current_endMinutesRead[j])))
+
+        {
+          M5.Lcd.printf("%02d:%02d-%02d:%02d %s*",
+                        all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
+                        all_event_current_endHoursRead[i + current_all_event_page * 9], all_event_current_endMinutesRead[i + current_all_event_page * 9],
+                        event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
+          break;
+        }
+      }
+      if (j == all_event_current_day - 1) {
+        M5.Lcd.printf("%02d:%02d-%02d:%02d %s",
+                      all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
+                      all_event_current_endHoursRead[i + current_all_event_page * 9], all_event_current_endMinutesRead[i + current_all_event_page * 9],
+                      event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
+        break;
+      }
+    }
   }
 }
 
