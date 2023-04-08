@@ -795,7 +795,9 @@ void readEvent() {
   file.close();
   for (int i = 0; i < lineRead; i++) {
     for (int j = i + 1; j < lineRead; j++) {
-      if (startHoursRead[i] > startHoursRead[j] || (startHoursRead[i] == startHoursRead[j] && startMinutesRead[i] > startMinutesRead[j])) {
+      if (startHoursRead[i] > startHoursRead[j] || (startHoursRead[i] == startHoursRead[j] && startMinutesRead[i] > startMinutesRead[j])
+          || (startHoursRead[i] == startHoursRead[j] && startMinutesRead[i] == startMinutesRead[j] && endHoursRead[i] > endHoursRead[j])
+          || (startHoursRead[i] == startHoursRead[j] && startMinutesRead[i] == startMinutesRead[j] && endHoursRead[i] == endHoursRead[j] && endMinutesRead[i] > endMinutesRead[j])) {
         sortedTypesRead = typesRead[i];
         sortedDayRead = dayRead[i];
         sortedMonthRead = monthRead[i];
