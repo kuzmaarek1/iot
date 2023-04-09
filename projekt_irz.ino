@@ -30,6 +30,7 @@ int start_display_main = 1, start_display_add = 1, start_display_all_event = 1, 
 int current_year, current_month, current_data;
 int current_events_count = 1;
 int count_alarm = 0, prev_count_alarm = 0;
+int last_event = 0;
 
 //Zmienne wykorzystywane podczas odczytywania lub zapisywania wartości do pliku
 int *dayRead, *monthRead, *yearRead, *startHoursRead, *startMinutesRead, *endHoursRead, *endMinutesRead, *typesRead;
@@ -292,7 +293,7 @@ void displayMainPage() {
     M5.Lcd.setCursor(140, 30);
     M5.Lcd.print("DZIS");
   }
-  if (current_events_count == 1)
+  if (current_events_count == 1 || current_main_page == 0)
     findEvent();
   M5.Lcd.setCursor(50, 50);
   M5.Lcd.setTextSize(4);
@@ -673,7 +674,34 @@ void setupParametres() {
   current_main_page = 0;
   current_add_page = 0;
   current_all_event_page = 0;
-  current_events_count = 1;
+
+  count_alarm = 0;
+  for (int i = 0; i < all_event_today_day; i++) {
+    if ((all_event_today_startHoursRead[i] < RTCtime.Hours || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] <= RTCtime.Minutes))
+        && (all_event_today_endHoursRead[i] > RTCtime.Hours || (all_event_today_endHoursRead[i] == RTCtime.Hours && all_event_today_endMinutesRead[i] > RTCtime.Minutes))) {
+      count_alarm++;
+      if (count_alarm == 1) {
+        last_event = i;
+      }
+    }
+  }
+
+  if (count_alarm == 0) {
+    for (int i = 0; i < all_event_today_day; i++) {
+      if ((all_event_today_startHoursRead[i] > RTCtime.Hours || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] > RTCtime.Minutes))) {
+        last_event = i;
+        break;
+      }
+      if (i == (all_event_today_day - 1)) {
+        last_event = all_event_today_day - 1;
+      }
+    }
+    if (all_event_today_day == 0) {
+      last_event = 0;
+    }
+  }
+
+  current_events_count = last_event+1;
 
   start_display_main = 1;
   start_display_add = 1;
@@ -715,6 +743,7 @@ void handleAddOrDelete(Event& e) {
   if (checkSetupTime == -2) {
     setupTime(setup_hours, setup_minutes, 0);
     setupData(setup_year, setup_month, setup_day);
+    findEvent();
     setupParametres();
     current_page = 0;
     displayRefresh();
@@ -798,6 +827,7 @@ void handleAddOrDelete(Event& e) {
     delay(1000);
     File file1 = SD.open("/events.txt");
     File file2 = SD.open("/events_delete.txt", FILE_WRITE);
+    int countDelete = 0;
     while (file1.available()) {
       strRead = file1.readStringUntil('\n');
       stringCount = 0;
@@ -812,7 +842,8 @@ void handleAddOrDelete(Event& e) {
                 && searchEvent[4] == all_event_current_startMinutesRead[current_events_count - 1]
                 && searchEvent[5] == all_event_current_endHoursRead[current_events_count - 1]
                 && searchEvent[6] == all_event_current_endMinutesRead[current_events_count - 1]
-                && searchEvent[7] == all_event_current_typesRead[current_events_count - 1])) {
+                && searchEvent[7] == all_event_current_typesRead[current_events_count - 1])
+              || countDelete != 0) {
             if (!file2.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
                               searchEvent[0], searchEvent[1], searchEvent[2], searchEvent[3], searchEvent[4], searchEvent[5], searchEvent[6], searchEvent[7])) {
               displayRefresh();
@@ -823,6 +854,8 @@ void handleAddOrDelete(Event& e) {
               displayRefresh();
               deleteError = 1;
             }
+          } else {
+            countDelete++;
           }
           break;
         } else {
@@ -1471,8 +1504,8 @@ void handleAllEvent(Event& e) {
 }
 
 void setup() {
-
   M5.begin();
+  delay(1000);
   setupWifi();
   setTimeAndData();
   delay(1000);
@@ -1502,6 +1535,8 @@ void setup() {
   FastLED.show();
 }
 
+
+
 void loop() {
   M5.update();
   M5.Rtc.GetTime(&RTCtime);
@@ -1512,16 +1547,10 @@ void loop() {
     if ((all_event_today_startHoursRead[i] < RTCtime.Hours || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] <= RTCtime.Minutes))
         && (all_event_today_endHoursRead[i] > RTCtime.Hours || (all_event_today_endHoursRead[i] == RTCtime.Hours && all_event_today_endMinutesRead[i] > RTCtime.Minutes))) {
       count_alarm++;
+      if (count_alarm == 1) {
+        last_event = i;
+      }
     }
-  }
-
-  if (prev_count_alarm != count_alarm && current_page == 0 && checkSetupTime > 0) {
-    M5.Lcd.clear();
-    start_display_main = 1;
-    start_display_add = 1;
-    start_display_all_event = 1;
-    start_display_details = 1;
-    prev_count_alarm = count_alarm;
   }
 
   if (count_alarm != 0) {
@@ -1534,16 +1563,42 @@ void loop() {
         ledsBuff[i].setRGB(0, 0, 0);
       }
     }
-    M5.Lcd.setCursor(110, 1);
+    M5.Lcd.setCursor(107, 1);
     M5.Lcd.setTextSize(2);
     M5.Lcd.printf("Alarm %d", count_alarm);
   } else {
+    for (int i = 0; i < all_event_today_day; i++) {
+      if ((all_event_today_startHoursRead[i] > RTCtime.Hours || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] > RTCtime.Minutes))) {
+        last_event = i;
+        break;
+      }
+      if (i == (all_event_today_day - 1)) {
+        last_event = all_event_today_day - 1;
+      }
+    }
+    if (all_event_today_day == 0) {
+      last_event = 0;
+    }
+
+
     for (int i = 0; i < LEDS_NUM; i++) {
       ledsBuff[i].setRGB(0, 0, 0);
     }
-    M5.Lcd.setCursor(110, 1);
+    M5.Lcd.setCursor(107, 1);
     M5.Lcd.setTextSize(2);
     M5.Lcd.print("      ");
+  }
+
+  if (prev_count_alarm != count_alarm && current_page == 0 && checkSetupTime > 0) {
+    M5.Lcd.clear();
+    start_display_main = 1;
+    start_display_add = 1;
+    start_display_all_event = 1;
+    start_display_details = 1;
+    prev_count_alarm = count_alarm;
+    if (current_events_count == 0) {
+      current_events_count = last_event + 1;
+    }
   }
 
   FastLED.show();
@@ -1559,8 +1614,8 @@ void loop() {
     displayDate();
     isSetupFirst = 0;
 
-    if (RTCtime.Hours == 23 && RTCtime.Minutes == 59 && RTCtime.Seconds > 58) {
-      delay(2000);
+    if (RTCtime.Hours == 23 && RTCtime.Minutes == 59 && RTCtime.Seconds > 57) {
+      delay(3000);
       setupParametres();
       setupData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
       findEvent();
@@ -1582,6 +1637,9 @@ void loop() {
           current_main_page--;
           decreaseData();
           displayRefresh();
+          if (current_main_page == 0) {
+            current_events_count = last_event + 1;
+          }
           displayMainPage();
         }
 
@@ -1679,13 +1737,14 @@ void loop() {
       displaySetupDateAndTime();
       start_setup = 0;
     }
-    if ((M5.BtnA.wasReleased() || M5.BtnA.pressedFor(1000, 200)) && (checkSetupTime == -1 || isSetupFirst == 0)) {
+    if ((M5.BtnA.wasReleased() || M5.BtnA.pressedFor(1000, 200)) && (checkSetupTime == -1 || checkSetupTime == -2 || isSetupFirst == 0)) {
       checkSetupTime++;
       displayRefresh();
       displaySetupDateAndTime();
       if (checkSetupTime == 1) {
-        setupParametres();
         setupCurrentData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
+        findEvent();
+        setupParametres();
         current_page = 0;
         displayRefresh();
       }
