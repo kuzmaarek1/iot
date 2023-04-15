@@ -2,13 +2,14 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include "time.h"
-//diody
 #include "FastLED.h"
+
+//Zmienne i stałe użyte do ustawnie diod LED
 #define LEDS_PIN 25
 #define LEDS_NUM 10
 CRGB ledsBuff[LEDS_NUM];
 
-//Zmienne pomocne do ustawień zegara i wifi
+//Zmienne pomocne do ustawień zegara i WiFi
 const char* ssid = "ANIA";
 const char* password = "52495557";
 const char* ntpServer = "tempus1.gum.gov.pl";
@@ -66,17 +67,17 @@ char event_type[15][20] = {
 int deleteError;
 int sortedTypesRead, sortedDayRead, sortedMonthRead, sortedYearRead, sortedStartHoursRead, sortedStartMinutesRead, sortedEndHoursRead, sortedEndMinutesRead;
 
-//Ustawienie wirtualnych
+//Ustawienie wirtualnych przycisków
 Button detailsBtn(110, 160, 150, 20, "detailsBtn");
 Button addOrDeleteBtn(110, 200, 100, 30, "addOrDeleteBtn");
-Button allEventBtn(120, 100, 80, 20);
-Button setupBtn(0, 0, 320, 10);
-Button event_add1(210, 90, 40, 35);
-Button event_sub1(260, 90, 40, 35);
-Button event_add2(210, 140, 40, 35);
-Button event_sub2(260, 140, 40, 35);
-Button event_add3(210, 190, 40, 35);
-Button event_sub3(260, 190, 40, 35);
+Button allEventBtn(120, 100, 80, 20, "allEventBtn");
+Button setupBtn(0, 0, 320, 10, "setupBtn");
+Button event_add1(210, 90, 40, 35, "event_add1");
+Button event_sub1(260, 90, 40, 35, "event_sub1");
+Button event_add2(210, 140, 40, 35, "event_add2");
+Button event_sub2(260, 140, 40, 35, "event_sub2");
+Button event_add3(210, 190, 40, 35, "event_add3");
+Button event_sub3(260, 190, 40, 35, "event_sub3");
 
 int isPressedEventAdd1, isPressedEventAdd2, isPressedEventAdd3 = 0;
 int isPressedEventSub1, isPressedEventSub2, isPressedEventSub3 = 0;
@@ -109,12 +110,14 @@ void setupTime(int hours, int minutes, int seconds) {
   if (!M5.Rtc.SetTime(&RTCtime)) Serial.println("wrong time set!");
 }
 
+//Ustawienie z jakiego dnia mają pojawiać się informacje na stronie głównej
 void setupCurrentData(int year, int month, int data) {
   current_year = year;
   current_month = month;
   current_data = data;
 }
 
+//Ustawienie daty
 void setupData(int year, int month, int data) {
   RTCDate.Year = year;
   RTCDate.Month = month;
@@ -123,6 +126,7 @@ void setupData(int year, int month, int data) {
   else setupCurrentData(year, month, data);
 }
 
+//Ustawienie daty i czasu z WiFi
 void setTimeAndData() {
   if (checkWiFi) {
     struct tm timeinfo;
@@ -140,6 +144,7 @@ void setTimeAndData() {
   }
 }
 
+//Wyświetlanie na ekranie obecnego czasu
 void displayTime() {
   M5.Rtc.GetTime(&RTCtime);
   sprintf(timeStrbuff, "%02d:%02d:%02d", RTCtime.Hours, RTCtime.Minutes, RTCtime.Seconds);
@@ -148,6 +153,7 @@ void displayTime() {
   M5.Lcd.print(timeStrbuff);
 }
 
+//Wyświetlanie na ekranie obecnej daty
 void displayDate() {
   if ((current_main_page != 0 && current_page == 0) || current_page != 0) {
     M5.Rtc.GetDate(&RTCDate);
@@ -158,6 +164,7 @@ void displayDate() {
   }
 }
 
+//Funkcja sprawdzająca, ile dni ma dany miesiąc
 int checkDayInMonth(int day, int month) {
   int n;
   int* tabMonthDays;
@@ -188,6 +195,7 @@ int checkDayInMonth(int day, int month) {
   return 0;
 }
 
+///funkcja zwiększająca miesiąc i rok do obenie wyświetlanej na stronie głównej daty
 void increaseMonthAndYear() {
   if (current_month < 12)
     current_month++;
@@ -197,6 +205,7 @@ void increaseMonthAndYear() {
   }
 }
 
+//pomocnicza funkcja zwiększająca obecnie wyświetlaną datę na ekranie głównym o jeden dzień
 void increaseDay(int conditional) {
   if (conditional) current_data++;
   else {
@@ -205,14 +214,12 @@ void increaseDay(int conditional) {
   }
 }
 
+//funkcja zwiększająca obecnie wyświetlaną datę na ekranie głównym o jeden dzień
 void increaseDate() {
-
   if (checkDayInMonth(31, current_month))
     increaseDay(current_data < 31 ? 1 : 0);
-
   else if (checkDayInMonth(30, current_month))
     increaseDay(current_data < 30 ? 1 : 0);
-
   else {
     if (current_year % 4 == 0)
       increaseDay(current_data < 29 ? 1 : 0);
@@ -221,6 +228,7 @@ void increaseDate() {
   }
 }
 
+//funkcja zmniejszająca obecnie wyświetlaną datę na ekranie głównym o jeden dzień
 void decreaseData() {
   if (current_data == 1) {
     if (current_month == 1) {
@@ -243,12 +251,14 @@ void decreaseData() {
   } else current_data--;
 }
 
+//funkcja służaca do czyszczenia zawartości ekranu
 void displayRefresh() {
   M5.Lcd.clear();
   M5.Lcd.fillScreen(BLACK);
   M5.Lcd.setTextColor(WHITE, BLACK);
 }
 
+//funckja znajdująca wszstkie wydarzenia znajdujące z w danym dniu
 void findEvent() {
   all_event_current_day = 0;
   all_event_today_day = 0;
@@ -285,6 +295,7 @@ void findEvent() {
   }
 }
 
+//funkcja wyświetlająca widok ekranu głównego
 void displayMainPage() {
   M5.Rtc.GetDate(&RTCDate);
   if (current_year == RTCDate.Year && current_month == RTCDate.Month && current_data == RTCDate.Date) {
@@ -307,7 +318,16 @@ void displayMainPage() {
     M5.Lcd.printf("%02d:%02d", all_event_current_startHoursRead[current_events_count - 1], all_event_current_startMinutesRead[current_events_count - 1]);
 
     M5.Lcd.setCursor(10, 160);
-    M5.Lcd.printf("%02d:%02d", all_event_current_endHoursRead[current_events_count - 1], all_event_current_endMinutesRead[current_events_count - 1]);
+
+    if (all_event_current_endMinutesRead[current_events_count - 1] != 59)
+      M5.Lcd.printf("%02d:%02d", all_event_current_endHoursRead[current_events_count - 1], all_event_current_endMinutesRead[current_events_count - 1] + 1);
+    else {
+      if (all_event_current_endHoursRead[current_events_count - 1] == 23 && all_event_current_endMinutesRead[current_events_count - 1] == 59) {
+        M5.Lcd.printf("%02d:%02d", 0, 0);
+      } else {
+        M5.Lcd.printf("%02d:%02d", all_event_current_endHoursRead[current_events_count - 1] + 1, 0);
+      }
+    }
 
     for (int i = 0; i < all_event_current_day; i++) {
       if (current_events_count - 1 != i) {
@@ -377,6 +397,7 @@ void displayMainPage() {
   M5.Lcd.setTextColor(WHITE, BLACK);
 }
 
+//funkca wyświetlająca kreator dodawania wydarzen
 void displayAddPage() {
   M5.Lcd.setCursor(110, 40);
   M5.Lcd.print("DODAWANIE");
@@ -511,7 +532,7 @@ void displayAddPage() {
 
       M5.Lcd.setCursor(50, 220);
       M5.Lcd.print("Start");
-      M5.Lcd.setCursor(180, 220);
+      M5.Lcd.setCursor(150, 220);
       M5.Lcd.printf("%02d:%02d:00", event_hours_start, event_minutes_start);
 
       break;
@@ -541,12 +562,12 @@ void displayAddPage() {
 
       M5.Lcd.setCursor(50, 150);
       M5.Lcd.print("Start");
-      M5.Lcd.setCursor(180, 150);
+      M5.Lcd.setCursor(150, 150);
       M5.Lcd.printf("%02d:%02d:00", event_hours_start, event_minutes_start);
 
       M5.Lcd.setCursor(50, 170);
       M5.Lcd.print("Koniec");
-      M5.Lcd.setCursor(180, 170);
+      M5.Lcd.setCursor(150, 170);
       M5.Lcd.printf("%02d:%02d:59", event_hours_end, event_minutes_end);
       if (event_hours_end < event_hours_start || (event_hours_end == event_hours_start && event_minutes_end < event_minutes_start)) {
         M5.Lcd.printf(" *");
@@ -561,6 +582,7 @@ void displayAddPage() {
   }
 }
 
+//funkcja wyświetlająca listę wydarzen w danym dniu
 void displayAllEvent() {
   M5.Lcd.setCursor(10, 22);
   int all_page = 0;
@@ -609,10 +631,26 @@ void displayAllEvent() {
         }
       }
     }
-    M5.Lcd.printf("%02d:%02d-%02d:%02d %s",
-                  all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
-                  all_event_current_endHoursRead[i + current_all_event_page * 9], all_event_current_endMinutesRead[i + current_all_event_page * 9],
-                  event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
+    
+    if (all_event_current_endMinutesRead[i + current_all_event_page * 9] != 59)
+      M5.Lcd.printf("%02d:%02d-%02d:%02d %s",
+                    all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
+                    all_event_current_endHoursRead[i + current_all_event_page * 9], all_event_current_endMinutesRead[i + current_all_event_page * 9] + 1,
+                    event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
+    else {
+      if (all_event_current_endHoursRead[current_events_count - 1] == 23 && all_event_current_endMinutesRead[current_events_count - 1] == 59) {
+        M5.Lcd.printf("%02d:%02d-%02d:%02d %s",
+                      all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
+                      0, 0,
+                      event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
+      } else {
+        M5.Lcd.printf("%02d:%02d-%02d:%02d %s",
+                      all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
+                      all_event_current_endHoursRead[i + current_all_event_page * 9] + 1, 0,
+                      event_type[all_event_current_typesRead[i + current_all_event_page * 9]]);
+      }
+    }
+
     if (count != 0) {
       if (numberArray % 4 == 0)
         M5.Lcd.setTextColor(RED, BLACK);
@@ -629,6 +667,7 @@ void displayAllEvent() {
   }
 }
 
+//funkcja wyświetlająca szczegółowe informacje o jednym wydarzeniu
 void displayDetailsPage() {
   M5.Lcd.setTextSize(2);
   M5.Lcd.setCursor(10, 35);
@@ -668,6 +707,7 @@ void displayDetailsPage() {
   M5.Lcd.setTextColor(WHITE, BLACK);
 }
 
+//funkcja ustawiająca podstawowe parametry
 void setupParametres() {
   current_main_page = 0;
   current_add_page = 0;
@@ -707,6 +747,7 @@ void setupParametres() {
   start_display_details = 1;
 }
 
+//Obsługa wirtualanego przycisku detailsBtn
 void handleDetails(Event& e) {
   if (current_page == 0 && checkSetupTime > 0) {
     current_page = 2;
@@ -716,6 +757,7 @@ void handleDetails(Event& e) {
   }
 }
 
+//Wyświetlanie banner o tym, że dodano wydarzenie
 void displayBannerAdd() {
   displayRefresh();
   M5.Lcd.setTextColor(GREEN, BLACK);
@@ -728,6 +770,7 @@ void displayBannerAdd() {
   displayRefresh();
 }
 
+//Wyświetlanie banner o tym, że podczas akcji wystąpił błąd
 void displayBannerError() {
   displayRefresh();
   M5.Lcd.setCursor(5, 110);
@@ -737,6 +780,7 @@ void displayBannerError() {
   displayRefresh();
 }
 
+//Obsługa wirtualnego przycisku addOrDeleteBtn
 void handleAddOrDelete(Event& e) {
   if (checkSetupTime == -2) {
     setupTime(setup_hours, setup_minutes, 0);
@@ -914,7 +958,7 @@ void handleAddOrDelete(Event& e) {
   }
 }
 
-
+//Czytanie wszstkich wydarzeń
 void readEvent() {
   file = SD.open("/events.txt");
   lineRead = 0;
@@ -989,11 +1033,13 @@ void readEvent() {
   }
 }
 
+//Obsługa wirtualnego przycisku event_add1
 void handleEventAdd1(Event& e) {
   Button& b = *e.button;
   isPressedEventAdd1 = b.isPressed();
 }
 
+//Akcje wykonywane w momencie przytrzymania przycisku event_add1
 void actionEventAdd1() {
   if (isPressedEventAdd1) {
     if (checkSetupTime == 0) {
@@ -1068,11 +1114,13 @@ void actionEventAdd1() {
   }
 }
 
+//Obsługa wirtualnego przycisku event_sub1
 void handleEventSub1(Event& e) {
   Button& b = *e.button;
   isPressedEventSub1 = b.isPressed();
 }
 
+//Akcje wykonywane w momencie przytrzymania przycisku event_sub1
 void actionEventSub1() {
   if (isPressedEventSub1) {
     if (checkSetupTime == 0) {
@@ -1147,11 +1195,13 @@ void actionEventSub1() {
   }
 }
 
+//Obsługa wirtualnego przycisku event_add2
 void handleEventAdd2(Event& e) {
   Button& b = *e.button;
   isPressedEventAdd2 = b.isPressed();
 }
 
+//Akcje wykonywane w momencie przytrzymania przycisku event_add2
 void actionEventAdd2() {
   if (isPressedEventAdd2) {
     if (checkSetupTime == 0) {
@@ -1210,11 +1260,13 @@ void actionEventAdd2() {
   }
 }
 
+//Obsługa wirtualnego przycisku event_sub2
 void handleEventSub2(Event& e) {
   Button& b = *e.button;
   isPressedEventSub2 = b.isPressed();
 }
 
+//Akcje wykonywane w momencie przytrzymania przycisku event_sub2
 void actionEventSub2() {
   if (isPressedEventSub2) {
     if (checkSetupTime == 0) {
@@ -1273,11 +1325,13 @@ void actionEventSub2() {
   }
 }
 
+//Obsługa wirtualnego przycisku event_add3
 void handleEventAdd3(Event& e) {
   Button& b = *e.button;
   isPressedEventAdd3 = b.isPressed();
 }
 
+//Akcje wykonywane w momencie przytrzymania przycisku event_add3
 void actionEventAdd3() {
   if (isPressedEventAdd3) {
     if (checkSetupTime == 0) {
@@ -1294,11 +1348,13 @@ void actionEventAdd3() {
   }
 }
 
+//Obsługa wirtualnego przycisku event_sub3
 void handleEventSub3(Event& e) {
   Button& b = *e.button;
   isPressedEventSub3 = b.isPressed();
 }
 
+//Akcje wykonywane w momencie przytrzymania przycisku event_sub3
 void actionEventSub3() {
   if (isPressedEventSub3) {
     if (checkSetupTime == 0) {
@@ -1318,6 +1374,7 @@ void actionEventSub3() {
   }
 }
 
+//Wyświetlanie kreatora ustawień
 void displaySetupDateAndTime() {
   switch (checkSetupTime) {
     case 0:
@@ -1463,7 +1520,7 @@ void displaySetupDateAndTime() {
       M5.Lcd.setCursor(50, 168);
       M5.Lcd.print("Godzina");
       M5.Lcd.setCursor(150, 168);
-      M5.Lcd.printf("%02d:%02d", setup_hours, setup_minutes);
+      M5.Lcd.printf("%02d:%02d:00", setup_hours, setup_minutes);
 
       M5.Lcd.setTextSize(2);
       M5.Lcd.fillRect(110, 200, 100, 30, BLUE);
@@ -1475,6 +1532,7 @@ void displaySetupDateAndTime() {
   }
 }
 
+//Obsługa wirtualnego przycisku setupBtn
 void handleSetup(Event& e) {
   if (checkSetupTime > 0) {
     M5.Rtc.GetTime(&RTCtime);
@@ -1491,6 +1549,7 @@ void handleSetup(Event& e) {
   }
 }
 
+//Obsługa wirtualnego przycisku allEventBtn
 void handleAllEvent(Event& e) {
   if (checkSetupTime > 0 && current_page == 0 && all_event_current_day != 0) {
     current_page = 3;
@@ -1532,13 +1591,12 @@ void setup() {
   FastLED.show();
 }
 
-
-
 void loop() {
   M5.update();
   M5.Rtc.GetTime(&RTCtime);
   M5.Rtc.GetDate(&RTCDate);
 
+  //sprawdzenie, ile alamów obecnie jest uruchomionych
   count_alarm = 0;
   for (int i = 0; i < all_event_today_day; i++) {
     if ((all_event_today_startHoursRead[i] < RTCtime.Hours || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] <= RTCtime.Minutes))
@@ -1550,6 +1608,7 @@ void loop() {
     }
   }
 
+  //Wyswietlanie na ekranie zawartosci o alaramach i zaswiecanie diod
   if (count_alarm != 0) {
     if (isFastLed == 1) {
       for (int i = 0; i < LEDS_NUM; i++) {
@@ -1577,7 +1636,6 @@ void loop() {
       last_event = 0;
     }
 
-
     for (int i = 0; i < LEDS_NUM; i++) {
       ledsBuff[i].setRGB(0, 0, 0);
     }
@@ -1586,6 +1644,7 @@ void loop() {
     M5.Lcd.print("      ");
   }
 
+  //sprawdzenie, czy liczba alarmów zmieniła się od ostatniego wywołania
   if (prev_count_alarm != count_alarm && current_page == 0 && checkSetupTime > 0) {
     M5.Lcd.clear();
     start_display_main = 1;
@@ -1599,6 +1658,7 @@ void loop() {
   }
 
   FastLED.show();
+  //funckje, które symbolizują akcje, które się wykonają w momencie uruchomienia wirtualnych przycisków
   actionEventAdd1();
   actionEventAdd2();
   actionEventAdd3();
@@ -1606,11 +1666,15 @@ void loop() {
   actionEventSub2();
   actionEventSub3();
 
-  if (checkSetupTime > 0) {
+  if (checkSetupTime > 0)  // sprawdzenie, czy użytkownik obecnie ustawia jakieść parametry
+  //jeżeli checkSetupTime > 0 to istnieje możliwość przeglądania ekranu głównego, listy wydarzen, szczegółowych informacji o wydarzeniu, a także użytkownik może przejśc do kreatora dodawania wydarzeń
+  //jeżeli checkSetupTime < 0 to uruchamiany jest kreator ustawień
+  {
     displayTime();
     displayDate();
     isSetupFirst = 0;
 
+    // odswieżenie ekranu o północy, a także usuwanie zawartości plików
     if (RTCtime.Hours == 23 && RTCtime.Minutes == 59 && RTCtime.Seconds > 57) {
       delay(4000);
       M5.Rtc.GetTime(&RTCtime);
@@ -1698,7 +1762,7 @@ void loop() {
     }
 
     switch (current_page) {
-      case 0:  //main page
+      case 0:  //ekran głowny
         if (start_display_main) {
           readEvent();
           displayMainPage();
@@ -1730,7 +1794,7 @@ void loop() {
           displayMainPage();
         }
         break;
-      case 1:  //add_events
+      case 1:  //dodawanie wydarzen
         if (start_display_add) {
           displayAddPage();
           start_display_add = 0;
@@ -1767,7 +1831,7 @@ void loop() {
           }
         }
         break;
-      case 2:  //details_page
+      case 2:  //szczegółowe informacje o wydarzeniu
         if (start_display_details) {
           displayDetailsPage();
           start_display_details = 0;
@@ -1780,7 +1844,7 @@ void loop() {
           displayRefresh();
         }
         break;
-      case 3:  //all_event_page
+      case 3:  //lista wydarzen
         if (start_display_all_event) {
           displayAllEvent();
           start_display_all_event = 0;
