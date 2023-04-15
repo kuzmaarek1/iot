@@ -10,7 +10,7 @@ CRGB ledsBuff[LEDS_NUM];
 
 //Zmienne pomocne do ustawień zegara i wifi
 const char* ssid = "ANIA";
-const char* password = "5249555";
+const char* password = "52495557";
 const char* ntpServer = "tempus1.gum.gov.pl";
 const long gmtOffset_sec = 3600;
 const int daylightOffset_sec = 3600;
@@ -331,7 +331,7 @@ void displayMainPage() {
                      && (all_event_current_startHoursRead[current_events_count - 1] > all_event_current_endHoursRead[i]
                          || (all_event_current_startHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_startMinutesRead[current_events_count - 1] >= all_event_current_endMinutesRead[i])))) {
           M5.Lcd.setCursor(110, 125);
-          M5.Lcd.printf("%s*", event_type[all_event_current_typesRead[current_events_count - 1]]);
+          M5.Lcd.printf("%s *", event_type[all_event_current_typesRead[current_events_count - 1]]);
           break;
         }
       }
@@ -551,7 +551,7 @@ void displayAddPage() {
       M5.Lcd.setCursor(180, 170);
       M5.Lcd.printf("%02d:%02d", event_hours_end, event_minutes_end);
       if ((event_hours_end == event_hours_start && event_minutes_end == event_minutes_start) || event_hours_end < event_hours_start || (event_hours_end == event_hours_start && event_minutes_end < event_minutes_start)) {
-        M5.Lcd.printf("*");
+        M5.Lcd.printf(" *");
       }
       M5.Lcd.fillRect(110, 200, 100, 30, BLUE);
       M5.Lcd.setCursor(132, 208);
@@ -624,7 +624,7 @@ void displayAllEvent() {
         M5.Lcd.setTextColor(BLUE, BLACK);
       else if (numberArray % 4 == 3)
         M5.Lcd.setTextColor(YELLOW, BLACK);
-
+      M5.Lcd.setCursor(280, 45 + i * 20);
       M5.Lcd.printf("%d*", count);
       M5.Lcd.setTextColor(WHITE, BLACK);
     }
