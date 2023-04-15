@@ -283,8 +283,6 @@ void findEvent() {
       all_event_today_day++;
     }
   }
-  Serial.printf("Line Read %d\n", lineRead);
-  Serial.printf("Event Current %d\n", all_event_current_day);
 }
 
 void displayMainPage() {
@@ -701,7 +699,7 @@ void setupParametres() {
     }
   }
 
-  current_events_count = last_event+1;
+  current_events_count = last_event + 1;
 
   start_display_main = 1;
   start_display_add = 1;
@@ -867,15 +865,14 @@ void handleAddOrDelete(Event& e) {
     }
     file1.close();
     file2.close();
-    Serial.print("USUWANIE");
+
     if (deleteError == 0) {
       File file1 = SD.open("/events.txt", FILE_WRITE);
       File file2 = SD.open("/events_delete.txt");
       deleteError = 1;
-      Serial.print("USUWANIE");
+
       while (file2.available()) {
         strRead = file2.readStringUntil('\n');
-        Serial.print("USUWANIE");
         if (!file1.println(strRead)) {
           displayRefresh();
           M5.Lcd.setCursor(5, 110);
@@ -1615,12 +1612,88 @@ void loop() {
     isSetupFirst = 0;
 
     if (RTCtime.Hours == 23 && RTCtime.Minutes == 59 && RTCtime.Seconds > 57) {
-      delay(3000);
+      delay(4000);
+      M5.Rtc.GetTime(&RTCtime);
+      M5.Rtc.GetDate(&RTCDate);
       setupParametres();
       setupData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
       findEvent();
-      delay(1000);
+      if (RTCDate.Date == 1) {
+        displayRefresh();
+        M5.Lcd.setCursor(55, 110);
+        M5.Lcd.print("CZYSZCZENIE PAMIECI");
+        delay(1000);
+        File file1 = SD.open("/events.txt");
+        File file2 = SD.open("/events_delete.txt", FILE_WRITE);
+        while (file1.available()) {
+          strRead = file1.readStringUntil('\n');
+          stringCount = 0;
+          deleteError = 0;
+          while (strRead.length() > 0) {
+            indexString = strRead.indexOf(";");
+            if (indexString == -1) {
+              searchEvent[stringCount] = atoi(strRead.c_str());
+              if (!((searchEvent[1] == RTCDate.Month - 1 && RTCDate.Month != 1 && RTCDate.Year == searchEvent[2])
+                    || (RTCDate.Month == 1 && RTCDate.Year == searchEvent[2] - 1))) {
+                if (!file2.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
+                                  searchEvent[0], searchEvent[1], searchEvent[2], searchEvent[3], searchEvent[4], searchEvent[5], searchEvent[6], searchEvent[7])) {
+                  displayRefresh();
+                  M5.Lcd.setCursor(5, 110);
+                  M5.Lcd.setTextColor(RED, BLACK);
+                  M5.Lcd.print("BLAD. SPROBOJ JESZCZE RAZ!");
+                  delay(2000);
+                  displayRefresh();
+                  deleteError = 1;
+                }
+              }
+              break;
+            } else {
+              searchEvent[stringCount] = atoi(strRead.substring(0, indexString).c_str());
+              stringCount++;
+              strRead = strRead.substring(indexString + 1);
+            }
+          }
+        }
+        file1.close();
+        file2.close();
+        if (deleteError == 0) {
+          File file1 = SD.open("/events.txt", FILE_WRITE);
+          File file2 = SD.open("/events_delete.txt");
+          deleteError = 1;
+          while (file2.available()) {
+            strRead = file2.readStringUntil('\n');
+            if (!file1.println(strRead)) {
+              displayRefresh();
+              M5.Lcd.setCursor(115, 110);
+              M5.Lcd.setTextColor(RED, BLACK);
+              M5.Lcd.print("BLAD");
+              delay(2000);
+              displayRefresh();
+              deleteError = 1;
+            }
+            deleteError = 0;
+          }
+          file1.close();
+          file2.close();
+        }
+        if (deleteError) {
+          displayRefresh();
+          M5.Lcd.setCursor(115, 110);
+          M5.Lcd.setTextColor(RED, BLACK);
+          M5.Lcd.print("BLAD");
+          delay(2000);
+          deleteError = 1;
+        } else {
+          SD.remove("/events_delete.txt");
+          displayRefresh();
+          M5.Lcd.setTextColor(GREEN, BLACK);
+          M5.Lcd.setCursor(105, 110);
+          M5.Lcd.print("USUNIETO");
+          delay(2000);
+        }
+      }
       current_page = 0;
+      start_display_main = 1;
       displayRefresh();
     }
 
