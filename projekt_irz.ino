@@ -319,7 +319,7 @@ void displayMainPage() {
                   && (all_event_current_endHoursRead[current_events_count - 1] < all_event_current_endHoursRead[i]
                       || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] < all_event_current_endMinutesRead[i])
                   && (all_event_current_endHoursRead[current_events_count - 1] < all_event_current_startHoursRead[i]
-                      || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] <= all_event_current_startMinutesRead[i]))
+                      || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_startHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] < all_event_current_startMinutesRead[i]))
 
                  //czas rozpoczecia1>czas rozpoczecia2 && czas zakonczenia1>czas zakonczenia2 && czas start1>czas zakonczenia2
                  || ((all_event_current_startHoursRead[current_events_count - 1] > all_event_current_startHoursRead[i]
@@ -327,7 +327,7 @@ void displayMainPage() {
                      && (all_event_current_endHoursRead[current_events_count - 1] > all_event_current_endHoursRead[i]
                          || (all_event_current_endHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_endMinutesRead[current_events_count - 1] > all_event_current_endMinutesRead[i])
                      && (all_event_current_startHoursRead[current_events_count - 1] > all_event_current_endHoursRead[i]
-                         || (all_event_current_startHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_startMinutesRead[current_events_count - 1] >= all_event_current_endMinutesRead[i])))) {
+                         || (all_event_current_startHoursRead[current_events_count - 1] == all_event_current_endHoursRead[i]) && all_event_current_startMinutesRead[current_events_count - 1] > all_event_current_endMinutesRead[i])))) {
           M5.Lcd.setCursor(110, 125);
           M5.Lcd.printf("%s *", event_type[all_event_current_typesRead[current_events_count - 1]]);
           break;
@@ -349,7 +349,7 @@ void displayMainPage() {
     M5.Rtc.GetTime(&RTCtime);
     M5.Rtc.GetDate(&RTCDate);
     if ((current_data == RTCDate.Date && current_month == RTCDate.Month && current_year == RTCDate.Year) && (all_event_current_startHoursRead[current_events_count - 1] < RTCtime.Hours || (all_event_current_startHoursRead[current_events_count - 1] == RTCtime.Hours && all_event_current_startMinutesRead[current_events_count - 1] <= RTCtime.Minutes))
-        && (all_event_current_endHoursRead[current_events_count - 1] > RTCtime.Hours || (all_event_current_endHoursRead[current_events_count - 1] == RTCtime.Hours && all_event_current_endMinutesRead[current_events_count - 1] > RTCtime.Minutes))) {
+        && (all_event_current_endHoursRead[current_events_count - 1] > RTCtime.Hours || (all_event_current_endHoursRead[current_events_count - 1] == RTCtime.Hours && all_event_current_endMinutesRead[current_events_count - 1] >= RTCtime.Minutes))) {
       M5.Lcd.fillRect(110, 160, 150, 20, GREEN);
       M5.Lcd.setTextColor(BLACK, GREEN);
       M5.Lcd.setCursor(160, 162);
@@ -512,7 +512,7 @@ void displayAddPage() {
       M5.Lcd.setCursor(50, 220);
       M5.Lcd.print("Start");
       M5.Lcd.setCursor(180, 220);
-      M5.Lcd.printf("%02d:%02d", event_hours_start, event_minutes_start);
+      M5.Lcd.printf("%02d:%02d:00", event_hours_start, event_minutes_start);
 
       break;
     case 3:
@@ -542,13 +542,13 @@ void displayAddPage() {
       M5.Lcd.setCursor(50, 150);
       M5.Lcd.print("Start");
       M5.Lcd.setCursor(180, 150);
-      M5.Lcd.printf("%02d:%02d", event_hours_start, event_minutes_start);
+      M5.Lcd.printf("%02d:%02d:00", event_hours_start, event_minutes_start);
 
       M5.Lcd.setCursor(50, 170);
       M5.Lcd.print("Koniec");
       M5.Lcd.setCursor(180, 170);
-      M5.Lcd.printf("%02d:%02d", event_hours_end, event_minutes_end);
-      if ((event_hours_end == event_hours_start && event_minutes_end == event_minutes_start) || event_hours_end < event_hours_start || (event_hours_end == event_hours_start && event_minutes_end < event_minutes_start)) {
+      M5.Lcd.printf("%02d:%02d:59", event_hours_end, event_minutes_end);
+      if (event_hours_end < event_hours_start || (event_hours_end == event_hours_start && event_minutes_end < event_minutes_start)) {
         M5.Lcd.printf(" *");
       }
       M5.Lcd.fillRect(110, 200, 100, 30, BLUE);
@@ -587,7 +587,7 @@ void displayAllEvent() {
                   && (all_event_current_endHoursRead[i + current_all_event_page * 9] < all_event_current_endHoursRead[j]
                       || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] < all_event_current_endMinutesRead[j])
                   && (all_event_current_endHoursRead[i + current_all_event_page * 9] < all_event_current_startHoursRead[j]
-                      || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_startHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] <= all_event_current_startMinutesRead[j]))
+                      || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_startHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] < all_event_current_startMinutesRead[j]))
 
                  //czas rozpoczecia1>czas rozpoczecia2 && czas zakonczenia1>czas zakonczenia2 && czasrozpoczecia1>czas_zakonczeniaa2
                  || ((all_event_current_startHoursRead[i + current_all_event_page * 9] > all_event_current_startHoursRead[j]
@@ -595,7 +595,7 @@ void displayAllEvent() {
                      && (all_event_current_endHoursRead[i + current_all_event_page * 9] > all_event_current_endHoursRead[j]
                          || (all_event_current_endHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_endMinutesRead[i + current_all_event_page * 9] > all_event_current_endMinutesRead[j])
                      && (all_event_current_startHoursRead[i + current_all_event_page * 9] > all_event_current_endHoursRead[j]
-                         || (all_event_current_startHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_startMinutesRead[i + current_all_event_page * 9] >= all_event_current_endMinutesRead[j]))))
+                         || (all_event_current_startHoursRead[i + current_all_event_page * 9] == all_event_current_endHoursRead[j]) && all_event_current_startMinutesRead[i + current_all_event_page * 9] > all_event_current_endMinutesRead[j]))))
 
         {
           if (count == 0) {
@@ -642,14 +642,14 @@ void displayDetailsPage() {
   M5.Lcd.print("Start");
   M5.Lcd.setTextSize(3);
   M5.Lcd.setCursor(130, 75);
-  M5.Lcd.printf("%02d:%02d", all_event_current_startHoursRead[current_events_count - 1], all_event_current_startMinutesRead[current_events_count - 1]);
+  M5.Lcd.printf("%02d:%02d:00", all_event_current_startHoursRead[current_events_count - 1], all_event_current_startMinutesRead[current_events_count - 1]);
 
   M5.Lcd.setTextSize(2);
   M5.Lcd.setCursor(10, 125);
   M5.Lcd.print("Koniec");
   M5.Lcd.setTextSize(3);
   M5.Lcd.setCursor(130, 120);
-  M5.Lcd.printf("%02d:%02d", all_event_current_endHoursRead[current_events_count - 1], all_event_current_endMinutesRead[current_events_count - 1]);
+  M5.Lcd.printf("%02d:%02d:59", all_event_current_endHoursRead[current_events_count - 1], all_event_current_endMinutesRead[current_events_count - 1]);
 
   M5.Lcd.setTextSize(2);
   M5.Lcd.setCursor(10, 170);
@@ -770,7 +770,7 @@ void handleAddOrDelete(Event& e) {
       File file = SD.open("/events.txt", FILE_APPEND);
       if (!file)
         file = SD.open("/events.txt", FILE_WRITE);
-      if ((event_hours_end == event_hours_start && event_minutes_end == event_minutes_start) || event_hours_end < event_hours_start || (event_hours_end == event_hours_start && event_minutes_end < event_minutes_start)) {
+      if (event_hours_end < event_hours_start || (event_hours_end == event_hours_start && event_minutes_end < event_minutes_start)) {
         next_day = event_day;
         next_month = event_month;
         next_year = event_year;
@@ -1542,7 +1542,7 @@ void loop() {
   count_alarm = 0;
   for (int i = 0; i < all_event_today_day; i++) {
     if ((all_event_today_startHoursRead[i] < RTCtime.Hours || (all_event_today_startHoursRead[i] == RTCtime.Hours && all_event_today_startMinutesRead[i] <= RTCtime.Minutes))
-        && (all_event_today_endHoursRead[i] > RTCtime.Hours || (all_event_today_endHoursRead[i] == RTCtime.Hours && all_event_today_endMinutesRead[i] > RTCtime.Minutes))) {
+        && (all_event_today_endHoursRead[i] > RTCtime.Hours || (all_event_today_endHoursRead[i] == RTCtime.Hours && all_event_today_endMinutesRead[i] >= RTCtime.Minutes))) {
       count_alarm++;
       if (count_alarm == 1) {
         last_event = i;
