@@ -1,0 +1,343 @@
+[
+    {
+        "id": "9b49521f2eea2015",
+        "type": "tab",
+        "label": "Flow 9",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "fcd3e9076b984f26",
+        "type": "mqtt in",
+        "z": "9b49521f2eea2015",
+        "name": "",
+        "topic": "event/add",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "1722c15d6d515c7e",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 220,
+        "y": 420,
+        "wires": [
+            [
+                "64b0396bb3719507"
+            ]
+        ]
+    },
+    {
+        "id": "64b0396bb3719507",
+        "type": "ui_text",
+        "z": "9b49521f2eea2015",
+        "group": "76a2c88d545fc69a",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "text",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "className": "",
+        "x": 510,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "42dcdf219945fdf5",
+        "type": "ui_form",
+        "z": "9b49521f2eea2015",
+        "name": "",
+        "label": "",
+        "group": "76a2c88d545fc69a",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "options": [
+            {
+                "label": "Data rozpoczęcia",
+                "value": "date",
+                "type": "date",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Czas rozpoczęcia",
+                "value": "start",
+                "type": "time",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Czas zakończenia",
+                "value": "end",
+                "type": "time",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Typ wydarzenia",
+                "value": "type",
+                "type": "text",
+                "required": true,
+                "rows": null
+            },
+            {
+                "label": "Descripton",
+                "value": "description",
+                "type": "multiline",
+                "required": false,
+                "rows": 3
+            }
+        ],
+        "formValue": {
+            "date": "",
+            "start": "",
+            "end": "",
+            "type": "",
+            "description": ""
+        },
+        "payload": "",
+        "submit": "submit",
+        "cancel": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 190,
+        "y": 600,
+        "wires": [
+            [
+                "fce3de963019e276"
+            ]
+        ]
+    },
+    {
+        "id": "261823bb0d8d6311",
+        "type": "mqtt out",
+        "z": "9b49521f2eea2015",
+        "name": "Event/add",
+        "topic": "event/add",
+        "qos": "2",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "1722c15d6d515c7e",
+        "x": 760,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "1c1c56b650b9fd07",
+        "type": "function",
+        "z": "9b49521f2eea2015",
+        "name": "function 1",
+        "func": "msg.payload = `${msg.year};${msg.month};${msg.day};${msg.hour_start};${msg.minute_start};${msg.hour_end};${msg.minute_end}`;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 520,
+        "wires": [
+            [
+                "261823bb0d8d6311"
+            ]
+        ]
+    },
+    {
+        "id": "2f80876499ae0abc",
+        "type": "function",
+        "z": "9b49521f2eea2015",
+        "name": "function 2",
+        "func": "msg.topic = \"SELECT * FROM events\"\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 180,
+        "wires": [
+            [
+                "337fc3cb27158168"
+            ]
+        ]
+    },
+    {
+        "id": "337fc3cb27158168",
+        "type": "mysql",
+        "z": "9b49521f2eea2015",
+        "mydb": "ca928f375421d7e7",
+        "name": "db",
+        "x": 990,
+        "y": 220,
+        "wires": [
+            [
+                "84127f8beea7fd09"
+            ]
+        ]
+    },
+    {
+        "id": "84127f8beea7fd09",
+        "type": "function",
+        "z": "9b49521f2eea2015",
+        "name": "function 3",
+        "func": "msg.payload = msg.payload;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 943.9332885742188,
+        "y": 427.9333190917969,
+        "wires": [
+            [
+                "b91612e4e4041ab4"
+            ]
+        ]
+    },
+    {
+        "id": "4d1c22cb65b1327c",
+        "type": "http in",
+        "z": "9b49521f2eea2015",
+        "name": "",
+        "url": "/events",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 370,
+        "y": 200,
+        "wires": [
+            [
+                "2f80876499ae0abc"
+            ]
+        ]
+    },
+    {
+        "id": "b91612e4e4041ab4",
+        "type": "http response",
+        "z": "9b49521f2eea2015",
+        "name": "Events",
+        "statusCode": "200",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 1110,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "c807cd5a289b200e",
+        "type": "mysql",
+        "z": "9b49521f2eea2015",
+        "mydb": "ca928f375421d7e7",
+        "name": "db",
+        "x": 610,
+        "y": 680,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1ec9fccc9b54427d",
+        "type": "function",
+        "z": "9b49521f2eea2015",
+        "name": "function 4",
+        "func": "\nmsg.topic = `INSERT INTO events(date, start, end, type, description) VALUES('${msg.year}-${msg.month}-${msg.day}', '${msg.hour_start}:${msg.minute_start}:00','${msg.hour_end}:${msg.hour_end}:00', '${msg.type}', '${msg.description}')`\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 680,
+        "wires": [
+            [
+                "c807cd5a289b200e"
+            ]
+        ]
+    },
+    {
+        "id": "fce3de963019e276",
+        "type": "function",
+        "z": "9b49521f2eea2015",
+        "name": "function 5",
+        "func": "const { date, start, end, type, description } = msg.payload\n\nconst date_start = new Date(String(date));\n\nconst year = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(date_start);\nconst month = new Intl.DateTimeFormat('en', { month: 'numeric' }).format(date_start);\nconst day = new Intl.DateTimeFormat('en', { day: 'numeric' }).format(date_start);\n\nconst time_start = new Date(String(start));\nconst hour_start = new Intl.DateTimeFormat('en', { hour: 'numeric', hour12: false }).format(time_start);\nconst minute_start = new Intl.DateTimeFormat('en', { minute: 'numeric' }).format(time_start);\n\nconst time_end = new Date(String(end));\nconst hour_end = new Intl.DateTimeFormat('en', { hour: 'numeric', hour12: false }).format(time_end);\nconst minute_end = new Intl.DateTimeFormat('en', { minute: 'numeric' }).format(time_end);\n\nmsg.year=year;\nmsg.month=month;\nmsg.day=day;\nmsg.hour_start=hour_start;\nmsg.minute_start=minute_start;\nmsg.hour_end = hour_end;\nmsg.minute_end = minute_end;\nmsg.type = type;\nmsg.description = description;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 540,
+        "wires": [
+            [
+                "1c1c56b650b9fd07",
+                "1ec9fccc9b54427d"
+            ]
+        ]
+    },
+    {
+        "id": "1722c15d6d515c7e",
+        "type": "mqtt-broker",
+        "name": "test.mosquitto.org",
+        "broker": "test.mosquitto.org",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "76a2c88d545fc69a",
+        "type": "ui_group",
+        "name": "Add",
+        "tab": "c906f1c1d0f47777",
+        "order": 1,
+        "disp": true,
+        "width": 32,
+        "collapse": true,
+        "className": ""
+    },
+    {
+        "id": "ca928f375421d7e7",
+        "type": "MySQLdatabase",
+        "name": "",
+        "host": "127.0.0.1",
+        "port": "3306",
+        "db": "test",
+        "tz": "",
+        "charset": "UTF8"
+    },
+    {
+        "id": "c906f1c1d0f47777",
+        "type": "ui_tab",
+        "name": "Add event",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    }
+]

@@ -1,3 +1,4 @@
+
 #include "M5Core2.h"
 #include <Arduino.h>
 #include <WiFi.h>
@@ -21,7 +22,7 @@ int value = 0;
 //Zmienne pomocne do ustawień zegara i WiFi
 const char* ssid = "ANIA";
 const char* password = "52495557";
-const char* mqtt_server = "broker.mqttdashboard.com";
+const char* mqtt_server = "test.mosquitto.org";
 const char* ntpServer = "tempus1.gum.gov.pl";
 const long gmtOffset_sec = 3600;
 const int daylightOffset_sec = 3600;
@@ -44,14 +45,15 @@ int count_alarm = 0, prev_count_alarm = 0;
 int last_event = 0;
 
 //Zmienne wykorzystywane podczas odczytywania lub zapisywania wartości do pliku
-int *dayRead, *monthRead, *yearRead, *startHoursRead, *startMinutesRead, *endHoursRead, *endMinutesRead, *typesRead;
+int *dayRead, *monthRead, *yearRead, *startHoursRead, *startMinutesRead, *endHoursRead, *endMinutesRead, *typesRead, *createDayRead, *createMonthRead, *createYearRead, *createHoursRead, *createMinutesRead, *createSecondsRead;
+
 String strRead;
 File file;
 int stringCount = 0;
 int indexString;
 int lineRead;
-int searchEvent[7];
-int *all_event_current_startHoursRead, *all_event_current_startMinutesRead, *all_event_current_endHoursRead, *all_event_current_endMinutesRead, *all_event_current_typesRead;
+int searchEvent[13];
+int *all_event_current_startHoursRead, *all_event_current_startMinutesRead, *all_event_current_endHoursRead, *all_event_current_endMinutesRead, *all_event_current_typesRead, *all_event_current_createDayRead, *all_event_current_createMonthRead, *all_event_current_createYearRead, *all_event_current_createHoursRead, *all_event_current_createMinutesRead, *all_event_current_createSecondsRead;
 int *all_event_today_startHoursRead, *all_event_today_startMinutesRead, *all_event_today_endHoursRead, *all_event_today_endMinutesRead, *all_event_today_typesRead;
 int all_event_current_day, all_event_today_day = 0;
 int next_day, next_month, next_year;
@@ -75,7 +77,7 @@ char event_type[15][20] = {
   "Inne"
 };
 int deleteError;
-int sortedTypesRead, sortedDayRead, sortedMonthRead, sortedYearRead, sortedStartHoursRead, sortedStartMinutesRead, sortedEndHoursRead, sortedEndMinutesRead;
+int sortedTypesRead, sortedDayRead, sortedMonthRead, sortedYearRead, sortedStartHoursRead, sortedStartMinutesRead, sortedEndHoursRead, sortedEndMinutesRead, sortedCreateDayRead, sortedCreateMonthRead, sortedCreateYearRead, sortedCreateHoursRead, sortedCreateMinutesRead, sortedCreateSecondsRead;
 
 //Ustawienie wirtualnych przycisków
 Button detailsBtn(110, 160, 150, 20, "detailsBtn");
@@ -281,11 +283,26 @@ void findEvent() {
       all_event_current_endMinutesRead = (int*)realloc(all_event_current_endMinutesRead, (all_event_current_day + 1) * sizeof(int));
       all_event_current_typesRead = (int*)realloc(all_event_current_typesRead, (all_event_current_day + 1) * sizeof(int));
 
+      all_event_current_createDayRead = (int*)realloc(all_event_current_createDayRead, (all_event_current_day + 1) * sizeof(int));
+      all_event_current_createMonthRead = (int*)realloc(all_event_current_createMonthRead, (all_event_current_day + 1) * sizeof(int));
+      all_event_current_createYearRead = (int*)realloc(all_event_current_createYearRead, (all_event_current_day + 1) * sizeof(int));
+      all_event_current_createHoursRead = (int*)realloc(all_event_current_createHoursRead, (all_event_current_day + 1) * sizeof(int));
+      all_event_current_createMinutesRead = (int*)realloc(all_event_current_createMinutesRead, (all_event_current_day + 1) * sizeof(int));
+      all_event_current_createSecondsRead = (int*)realloc(all_event_current_createSecondsRead, (all_event_current_day + 1) * sizeof(int));
+
       all_event_current_startHoursRead[all_event_current_day] = startHoursRead[i];
       all_event_current_startMinutesRead[all_event_current_day] = startMinutesRead[i];
       all_event_current_endHoursRead[all_event_current_day] = endHoursRead[i];
       all_event_current_endMinutesRead[all_event_current_day] = endMinutesRead[i];
       all_event_current_typesRead[all_event_current_day] = typesRead[i];
+      
+      all_event_current_createDayRead[all_event_current_day] = createDayRead[i];
+      all_event_current_createMonthRead[all_event_current_day] = createMonthRead[i];
+      all_event_current_createYearRead[all_event_current_day] = createYearRead[i];
+      all_event_current_createHoursRead[all_event_current_day] = createHoursRead[i];
+      all_event_current_createMinutesRead[all_event_current_day] = createMinutesRead[i];
+      all_event_current_createSecondsRead[all_event_current_day] = createSecondsRead[i];
+
       all_event_current_day++;
     }
     if (yearRead[i] == RTCDate.Year && monthRead[i] == RTCDate.Month && dayRead[i] == RTCDate.Date) {
@@ -707,14 +724,20 @@ void displayDetailsPage() {
   M5.Lcd.setTextSize(3);
   M5.Lcd.setCursor(130, 120);
   M5.Lcd.printf("%02d:%02d:59", all_event_current_endHoursRead[current_events_count - 1], all_event_current_endMinutesRead[current_events_count - 1]);
-
+/*
   M5.Lcd.setTextSize(2);
   M5.Lcd.setCursor(10, 170);
   M5.Lcd.print("Rodzaj");
   M5.Lcd.setTextSize(3);
   M5.Lcd.setCursor(130, 165);
   M5.Lcd.print(event_type[all_event_current_typesRead[current_events_count - 1]]);
-
+*/
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.setCursor(10, 190);
+  M5.Lcd.print("Utworzono");
+  M5.Lcd.setTextSize(3);
+  M5.Lcd.setCursor(130, 185);
+  M5.Lcd.printf("%02d.%02d.%04d %02d:%02d:59", all_event_current_createDayRead[current_events_count - 1], all_event_current_createMonthRead[current_events_count - 1], all_event_current_createYearRead[current_events_count - 1], all_event_current_createHoursRead[current_events_count - 1], all_event_current_createMinutesRead[current_events_count - 1], all_event_current_createSecondsRead[current_events_count - 1]);
 
   M5.Lcd.setTextSize(2);
   M5.Lcd.setTextColor(WHITE, BLUE);
@@ -825,6 +848,8 @@ void handleAddOrDelete(Event& e) {
   }
   if (current_page == 1) {
     if (current_add_page == 3) {
+      M5.Rtc.GetDate(&RTCDate);
+      M5.Rtc.GetTime(&RTCtime);
       displayRefresh();
       M5.Lcd.setCursor(110, 110);
       M5.Lcd.print("DODAWANIE");
@@ -861,18 +886,18 @@ void handleAddOrDelete(Event& e) {
             }
           } else next_day = event_day + 1;
         }
-        if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
-                        event_day, event_month, event_year, event_hours_start, event_minutes_start, 23, 59, event_type_number)
-            && file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
-                           next_day, next_month, next_year, 0, 0, event_hours_end, event_minutes_end, event_type_number)) {
+        if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+                        event_day, event_month, event_year, event_hours_start, event_minutes_start, 23, 59, event_type_number, RTCDate.Date, RTCDate.Month, RTCDate.Year, RTCtime.Hours, RTCtime.Minutes, RTCtime.Seconds)
+            && file.printf("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+                           next_day, next_month, next_year, 0, 0, event_hours_end, event_minutes_end, event_type_number, RTCDate.Date, RTCDate.Month, RTCDate.Year, RTCtime.Hours, RTCtime.Minutes, RTCtime.Seconds)) {
           snprintf(msg, MSG_BUFFER_SIZE, "Dodano");
           client.publish("M5Stack", msg);
           displayBannerAdd();
         } else {
           displayBannerError();
         }
-      } else if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
-                             event_day, event_month, event_year, event_hours_start, event_minutes_start, event_hours_end, event_minutes_end, event_type_number)) {
+      } else if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+                             event_day, event_month, event_year, event_hours_start, event_minutes_start, event_hours_end, event_minutes_end, event_type_number, RTCDate.Date, RTCDate.Month, RTCDate.Year, RTCtime.Hours, RTCtime.Minutes, RTCtime.Seconds)) {
         displayBannerAdd();
         snprintf(msg, MSG_BUFFER_SIZE, "Dodano");
         client.publish("M5Stack", msg);
@@ -906,18 +931,29 @@ void handleAddOrDelete(Event& e) {
                 && searchEvent[4] == all_event_current_startMinutesRead[current_events_count - 1]
                 && searchEvent[5] == all_event_current_endHoursRead[current_events_count - 1]
                 && searchEvent[6] == all_event_current_endMinutesRead[current_events_count - 1]
-                && searchEvent[7] == all_event_current_typesRead[current_events_count - 1])
+                && searchEvent[7] == all_event_current_typesRead[current_events_count - 1]
+                && searchEvent[8] == all_event_current_createDayRead[current_events_count - 1]
+                && searchEvent[9] == all_event_current_createMonthRead[current_events_count - 1]
+                && searchEvent[10] == all_event_current_createYearRead[current_events_count - 1]
+                && searchEvent[11] == all_event_current_createHoursRead[current_events_count - 1]
+                && searchEvent[12] == all_event_current_createMinutesRead[current_events_count - 1]
+                && searchEvent[13] == all_event_current_createSecondsRead[current_events_count - 1]
+                )
               || countDelete != 0) {
-            if (!file2.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
-                              searchEvent[0], searchEvent[1], searchEvent[2], searchEvent[3], searchEvent[4], searchEvent[5], searchEvent[6], searchEvent[7])) {
+             
+            if (!file2.printf("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+                              searchEvent[0], searchEvent[1], searchEvent[2], searchEvent[3], searchEvent[4], searchEvent[5], searchEvent[6], searchEvent[7], searchEvent[8],  searchEvent[9],  searchEvent[10],  searchEvent[11],  searchEvent[12],  searchEvent[13] )) {
               displayRefresh();
               M5.Lcd.setCursor(5, 110);
               M5.Lcd.setTextColor(RED, BLACK);
               M5.Lcd.print("BLAD. SPROBOJ JESZCZE RAZ!");
+              M5.Lcd.printf("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+                              searchEvent[0], searchEvent[1], searchEvent[2], searchEvent[3], searchEvent[4], searchEvent[5], searchEvent[6], searchEvent[7], searchEvent[8],  searchEvent[9],  searchEvent[10],  searchEvent[11],  searchEvent[12],  searchEvent[13]);
               delay(2000);
               displayRefresh();
               deleteError = 1;
             }
+           
           } else {
             countDelete++;
           }
@@ -998,10 +1034,17 @@ void readEvent() {
     endMinutesRead = (int*)realloc(endMinutesRead, (lineRead + 1) * sizeof(int));
     typesRead = (int*)realloc(typesRead, (lineRead + 1) * sizeof(int));
 
+    createDayRead = (int*)realloc(createDayRead, (lineRead + 1) * sizeof(int));
+    createMonthRead = (int*)realloc(createMonthRead, (lineRead + 1) * sizeof(int));
+    createYearRead = (int*)realloc(createYearRead, (lineRead + 1) * sizeof(int));
+    createHoursRead =(int*)realloc(createHoursRead, (lineRead + 1) * sizeof(int));
+    createMinutesRead = (int*)realloc(createMinutesRead, (lineRead + 1) * sizeof(int));
+    createSecondsRead = (int*)realloc(createSecondsRead, (lineRead + 1) * sizeof(int));
+
     while (strRead.length() > 0) {
       indexString = strRead.indexOf(";");
       if (indexString == -1) {
-        typesRead[lineRead] = atoi(strRead.c_str());
+        createSecondsRead[lineRead] = atoi(strRead.c_str());
         break;
       } else {
         if (stringCount == 0) dayRead[lineRead] = atoi(strRead.substring(0, indexString).c_str());
@@ -1011,6 +1054,13 @@ void readEvent() {
         else if (stringCount == 4) startMinutesRead[lineRead] = atoi(strRead.substring(0, indexString).c_str());
         else if (stringCount == 5) endHoursRead[lineRead] = atoi(strRead.substring(0, indexString).c_str());
         else if (stringCount == 6) endMinutesRead[lineRead] = atoi(strRead.substring(0, indexString).c_str());
+        else if (stringCount == 7) typesRead[lineRead] = atoi(strRead.substring(0, indexString).c_str());
+
+        else if (stringCount == 8) createDayRead[lineRead] = atoi(strRead.substring(0, indexString).c_str());
+        else if (stringCount == 9) createMonthRead[lineRead] = atoi(strRead.substring(0, indexString).c_str());
+        else if (stringCount == 10) createYearRead[lineRead] = atoi(strRead.substring(0, indexString).c_str());
+        else if (stringCount == 11) createHoursRead[lineRead] = atoi(strRead.substring(0, indexString).c_str());
+        else if (stringCount == 12) createMinutesRead[lineRead] = atoi(strRead.substring(0, indexString).c_str());
 
         stringCount++;
         strRead = strRead.substring(indexString + 1);
@@ -1032,6 +1082,13 @@ void readEvent() {
         sortedStartMinutesRead = startMinutesRead[i];
         sortedEndHoursRead = endHoursRead[i];
         sortedEndMinutesRead = endMinutesRead[i];
+      
+        sortedCreateDayRead=createDayRead[i];
+        sortedCreateMonthRead=createMonthRead[i];
+        sortedCreateYearRead=createYearRead[i];
+        sortedCreateHoursRead=createHoursRead[i];
+        sortedCreateMinutesRead=createMinutesRead[i];
+        sortedCreateSecondsRead=createSecondsRead[i];
 
         typesRead[i] = typesRead[j];
         dayRead[i] = dayRead[j];
@@ -1041,6 +1098,12 @@ void readEvent() {
         startMinutesRead[i] = startMinutesRead[j];
         endHoursRead[i] = endHoursRead[j];
         endMinutesRead[i] = endMinutesRead[j];
+        createDayRead[i] = createDayRead[j];
+        createMonthRead[i] = createMonthRead[j];
+        createYearRead[i] = createYearRead[j];
+        createHoursRead[i] = createHoursRead[j];
+        createMinutesRead[i] = createMinutesRead[j];
+        createSecondsRead[i] = createSecondsRead[j];
 
         typesRead[j] = sortedTypesRead;
         dayRead[j] = sortedDayRead;
@@ -1050,6 +1113,13 @@ void readEvent() {
         startMinutesRead[j] = sortedStartMinutesRead;
         endHoursRead[j] = sortedEndHoursRead;
         endMinutesRead[j] = sortedEndMinutesRead;
+
+        createDayRead[i] = sortedCreateDayRead;
+        createMonthRead[j] = sortedCreateMonthRead;
+        createYearRead[j] = sortedCreateYearRead;
+        createHoursRead[j] = sortedCreateHoursRead;
+        createMinutesRead[j] = sortedCreateMinutesRead;
+        createSecondsRead[j] = sortedCreateSecondsRead;
       }
     }
   }
@@ -1582,6 +1652,89 @@ void handleAllEvent(Event& e) {
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
+  if (strcmp(topic, "event/add") == 0) {
+    char char_message[length];
+    for (int i = 0; i < length; i++) {
+      char_message[i] = (char)payload[i];
+    }
+    String message = (char*)char_message;
+    displayRefresh();
+    M5.Lcd.setCursor(110, 110);
+    M5.Lcd.print("DODAWANIE");
+    delay(1000);
+    int stringCountMessage = 0;
+    int dayMessage, monthMessage, yearMessage, startHoursMessage, startMinutesMessage, endHoursMessage, endMinutesMessage, typesMessage;
+    while (1) {
+      int indexStringMessage = message.indexOf(";");
+      if (indexStringMessage == -1) {
+        typesMessage = atoi(message.substring(0,message.indexOf("n")).c_str());
+        break;
+      } else {
+        if (stringCountMessage == 0) dayMessage = atoi(message.substring(0, indexStringMessage).c_str());
+        else if (stringCountMessage == 1) monthMessage = atoi(message.substring(0, indexStringMessage).c_str());
+        else if (stringCountMessage == 2) yearMessage = atoi(message.substring(0, indexStringMessage).c_str());
+        else if (stringCountMessage == 3) startHoursMessage = atoi(message.substring(0, indexStringMessage).c_str());
+        else if (stringCountMessage == 4) startMinutesMessage = atoi(message.substring(0, indexStringMessage).c_str());
+        else if (stringCountMessage == 5) endHoursMessage = atoi(message.substring(0, indexStringMessage).c_str());
+        else if (stringCountMessage == 6) endMinutesMessage = atoi(message.substring(0, indexStringMessage).c_str());
+        stringCountMessage++;
+        message = message.substring(indexStringMessage + 1);
+      }
+    }
+    File file = SD.open("/events.txt", FILE_APPEND);
+    if (!file)
+      file = SD.open("/events.txt", FILE_WRITE);
+    if (endHoursMessage < startHoursMessage || (endHoursMessage == startHoursMessage && endMinutesMessage < startMinutesMessage)) {
+      next_day = dayMessage;
+      next_month = monthMessage;
+      next_year = yearMessage;
+      if (!checkDayInMonth(31, monthMessage)) {
+        if (checkDayInMonth(30, monthMessage)) {
+          if (dayMessage == 30) {
+            next_day = 1;
+            next_month = monthMessage + 1;
+          } else next_day = dayMessage + 1;
+        } else {
+          if (yearMessage % 4 == 0 &&  dayMessage == 29) {
+            next_day = 1;
+            next_month = 3;
+          } else if (yearMessage % 4 != 0 &&  dayMessage == 28) {
+            next_day = 1;
+            next_month = 3;
+          } else next_day = dayMessage + 1;
+        }
+      } else {
+        if (dayMessage == 31) {
+          next_day = 1;
+          next_month = monthMessage + 1;
+          if (monthMessage == 12) {
+            next_month = 1;
+            next_year = yearMessage + 1;
+          }
+        } else next_day = dayMessage + 1;
+      }
+      if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
+                      dayMessage,  monthMessage, yearMessage, startHoursMessage, startMinutesMessage, 23, 59, typesMessage)
+          && file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
+                          next_day, next_month, next_year, 0, 0, endHoursMessage, endMinutesMessage, typesMessage)) {
+        displayBannerAdd();
+      } else {
+        displayBannerError();
+      }
+    } else if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
+                            dayMessage, monthMessage, yearMessage, startHoursMessage, startMinutesMessage, endHoursMessage, endMinutesMessage, typesMessage)) {
+      displayBannerAdd();
+    } else {
+      displayBannerError();
+    }
+    file.close();
+    setupParametres();
+    current_page = 0;
+    displayRefresh();
+  }
+
+/*
+{ 
   M5.Lcd.print("Message arrived [");
   M5.Lcd.print(topic);
   M5.Lcd.print("] ");
@@ -1589,6 +1742,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
     M5.Lcd.print((char)payload[i]);
   }
   M5.Lcd.println();
+  }
+  */
 }
 
 
@@ -1640,7 +1795,7 @@ void reConnect() {
       // Once connected, publish an announcement to the topic
       client.publish("M5Stack", "hello world");
       // ... and resubscribe
-      client.subscribe("M5Stack");
+      client.subscribe("event/add");
     } else {
       M5.Lcd.print("failed, rc=");
       M5.Lcd.print(client.state());
@@ -1760,8 +1915,8 @@ void loop() {
               searchEvent[stringCount] = atoi(strRead.c_str());
               if (!((searchEvent[1] == RTCDate.Month - 1 && RTCDate.Month != 1 && RTCDate.Year == searchEvent[2])
                     || (RTCDate.Month == 1 && RTCDate.Year == searchEvent[2] - 1))) {
-                if (!file2.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
-                                  searchEvent[0], searchEvent[1], searchEvent[2], searchEvent[3], searchEvent[4], searchEvent[5], searchEvent[6], searchEvent[7])) {
+                if (!file2.printf("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+                                  searchEvent[0], searchEvent[1], searchEvent[2], searchEvent[3], searchEvent[4], searchEvent[5], searchEvent[6], searchEvent[7], searchEvent[8], searchEvent[9], searchEvent[10], searchEvent[11], searchEvent[12], searchEvent[13])) {
                   displayRefresh();
                   M5.Lcd.setCursor(5, 110);
                   M5.Lcd.setTextColor(RED, BLACK);
