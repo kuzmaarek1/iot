@@ -3,15 +3,25 @@
 #include <WiFi.h>
 #include "time.h"
 #include "FastLED.h"
+#include <PubSubClient.h>
+
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 //Zmienne i stałe użyte do ustawnie diod LED
 #define LEDS_PIN 25
 #define LEDS_NUM 10
 CRGB ledsBuff[LEDS_NUM];
 
+unsigned long lastMsg = 0;
+#define MSG_BUFFER_SIZE (50)
+char msg[MSG_BUFFER_SIZE];
+int value = 0;
+
 //Zmienne pomocne do ustawień zegara i WiFi
 const char* ssid = "ANIA";
 const char* password = "52495557";
+const char* mqtt_server = "broker.mqttdashboard.com";
 const char* ntpServer = "tempus1.gum.gov.pl";
 const long gmtOffset_sec = 3600;
 const int daylightOffset_sec = 3600;
@@ -298,16 +308,22 @@ void findEvent() {
 //funkcja wyświetlająca widok ekranu głównego
 void displayMainPage() {
   M5.Rtc.GetDate(&RTCDate);
+  //sprawdzenie, czy są przeglądane wydarzenia z obecnego dni
   if (current_year == RTCDate.Year && current_month == RTCDate.Month && current_data == RTCDate.Date) {
     M5.Lcd.setCursor(140, 30);
     M5.Lcd.print("DZIS");
   }
+  //wyszukiwanie wydarzen
   if (current_events_count == 1 || current_main_page == 0)
     findEvent();
+
+  //wyswietlanie, z jakiego dnia są przeglądane wydarzenia
   M5.Lcd.setCursor(50, 50);
   M5.Lcd.setTextSize(4);
   M5.Lcd.printf("%02d.%02d.%d", current_data, current_month, current_year);
 
+  //wyświetlanie na ekranie jednego wydarzenia, z danego dnia
+  //jeżeli w danym dniu coś zaplanowano
   if (all_event_current_day != 0) {
     M5.Lcd.setCursor(260, 100);
     M5.Lcd.setTextSize(2);
@@ -381,13 +397,15 @@ void displayMainPage() {
       M5.Lcd.setCursor(132, 162);
       M5.Lcd.print("Szczegoly");
     }
-
-  } else {
+  }
+  //Informowanie o braku wydarzeń
+  else {
     M5.Lcd.setTextColor(RED, BLACK);
     M5.Lcd.setTextSize(3);
     M5.Lcd.setCursor(50, 132);
     M5.Lcd.print("Brak wydarzen");
   }
+  //Wyodrębnie przycisku do kretora dodawania wydarzeń
   M5.Lcd.fillRect(110, 200, 100, 30, BLUE);
   M5.Lcd.setTextColor(WHITE, BLUE);
   M5.Lcd.setTextSize(2);
@@ -631,7 +649,7 @@ void displayAllEvent() {
         }
       }
     }
-    
+
     if (all_event_current_endMinutesRead[i + current_all_event_page * 9] != 59)
       M5.Lcd.printf("%02d:%02d-%02d:%02d %s",
                     all_event_current_startHoursRead[i + current_all_event_page * 9], all_event_current_startMinutesRead[i + current_all_event_page * 9],
@@ -847,6 +865,8 @@ void handleAddOrDelete(Event& e) {
                         event_day, event_month, event_year, event_hours_start, event_minutes_start, 23, 59, event_type_number)
             && file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
                            next_day, next_month, next_year, 0, 0, event_hours_end, event_minutes_end, event_type_number)) {
+          snprintf(msg, MSG_BUFFER_SIZE, "Dodano");
+          client.publish("M5Stack", msg);
           displayBannerAdd();
         } else {
           displayBannerError();
@@ -854,6 +874,8 @@ void handleAddOrDelete(Event& e) {
       } else if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
                              event_day, event_month, event_year, event_hours_start, event_minutes_start, event_hours_end, event_minutes_end, event_type_number)) {
         displayBannerAdd();
+        snprintf(msg, MSG_BUFFER_SIZE, "Dodano");
+        client.publish("M5Stack", msg);
       } else {
         displayBannerError();
       }
@@ -1559,10 +1581,25 @@ void handleAllEvent(Event& e) {
   }
 }
 
+void callback(char* topic, byte* payload, unsigned int length) {
+  M5.Lcd.print("Message arrived [");
+  M5.Lcd.print(topic);
+  M5.Lcd.print("] ");
+  for (int i = 0; i < length; i++) {
+    M5.Lcd.print((char)payload[i]);
+  }
+  M5.Lcd.println();
+}
+
+
 void setup() {
   M5.begin();
   delay(1000);
   setupWifi();
+
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
+
   setTimeAndData();
   delay(1000);
   M5.Lcd.fillScreen(BLACK);
@@ -1591,10 +1628,34 @@ void setup() {
   FastLED.show();
 }
 
+void reConnect() {
+  while (!client.connected()) {
+    M5.Lcd.print("Attempting MQTT connection...");
+    String clientId = "M5Stack-";  // Create a random client ID
+    clientId += String(random(0xffff), HEX);
+
+    if (client.connect(clientId.c_str()))  // Attempt to connect
+    {
+      M5.Lcd.printf("\nSuccess\n");
+      // Once connected, publish an announcement to the topic
+      client.publish("M5Stack", "hello world");
+      // ... and resubscribe
+      client.subscribe("M5Stack");
+    } else {
+      M5.Lcd.print("failed, rc=");
+      M5.Lcd.print(client.state());
+      M5.Lcd.println("try again in 5 seconds");
+      delay(5000);
+    }
+  }
+}
 void loop() {
   M5.update();
   M5.Rtc.GetTime(&RTCtime);
   M5.Rtc.GetDate(&RTCDate);
+
+  if (!client.connected()) { reConnect(); }
+  client.loop();
 
   //sprawdzenie, ile alamów obecnie jest uruchomionych
   count_alarm = 0;
@@ -1608,7 +1669,7 @@ void loop() {
     }
   }
 
-  //Wyswietlanie na ekranie zawartosci o alaramach i zaswiecanie diod
+  //Wyswietlanie na ekranie zawartosci o alarmach i zaswiecanie diod
   if (count_alarm != 0) {
     if (isFastLed == 1) {
       for (int i = 0; i < LEDS_NUM; i++) {
