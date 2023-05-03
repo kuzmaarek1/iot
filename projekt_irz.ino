@@ -712,31 +712,31 @@ void displayDetailsPage() {
   M5.Lcd.printf("%02d.%02d.%04d", current_data, current_month, current_year);
 
   M5.Lcd.setTextSize(2);
-  M5.Lcd.setCursor(10, 80);
+  M5.Lcd.setCursor(10, 75);
   M5.Lcd.print("Start");
   M5.Lcd.setTextSize(3);
-  M5.Lcd.setCursor(130, 75);
+  M5.Lcd.setCursor(130, 70);
   M5.Lcd.printf("%02d:%02d:00", all_event_current_startHoursRead[current_events_count - 1], all_event_current_startMinutesRead[current_events_count - 1]);
 
   M5.Lcd.setTextSize(2);
-  M5.Lcd.setCursor(10, 125);
+  M5.Lcd.setCursor(10, 115);
   M5.Lcd.print("Koniec");
   M5.Lcd.setTextSize(3);
-  M5.Lcd.setCursor(130, 120);
+  M5.Lcd.setCursor(130, 110);
   M5.Lcd.printf("%02d:%02d:59", all_event_current_endHoursRead[current_events_count - 1], all_event_current_endMinutesRead[current_events_count - 1]);
-/*
+
   M5.Lcd.setTextSize(2);
-  M5.Lcd.setCursor(10, 170);
+  M5.Lcd.setCursor(10, 155);
   M5.Lcd.print("Rodzaj");
   M5.Lcd.setTextSize(3);
-  M5.Lcd.setCursor(130, 165);
+  M5.Lcd.setCursor(130, 150);
   M5.Lcd.print(event_type[all_event_current_typesRead[current_events_count - 1]]);
-*/
+
   M5.Lcd.setTextSize(1);
-  M5.Lcd.setCursor(10, 190);
+  M5.Lcd.setCursor(10, 180);
   M5.Lcd.print("Utworzono");
-  M5.Lcd.setTextSize(3);
-  M5.Lcd.setCursor(130, 185);
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.setCursor(130, 180);
   M5.Lcd.printf("%02d.%02d.%04d %02d:%02d:59", all_event_current_createDayRead[current_events_count - 1], all_event_current_createMonthRead[current_events_count - 1], all_event_current_createYearRead[current_events_count - 1], all_event_current_createHoursRead[current_events_count - 1], all_event_current_createMinutesRead[current_events_count - 1], all_event_current_createSecondsRead[current_events_count - 1]);
 
   M5.Lcd.setTextSize(2);
@@ -779,6 +779,7 @@ void setupParametres() {
       last_event = 0;
     }
   }
+
 
   current_events_count = last_event + 1;
 
@@ -971,7 +972,6 @@ void handleAddOrDelete(Event& e) {
     if (deleteError == 0) {
       File file1 = SD.open("/events.txt", FILE_WRITE);
       File file2 = SD.open("/events_delete.txt");
-      deleteError = 1;
 
       while (file2.available()) {
         strRead = file2.readStringUntil('\n');
@@ -1012,6 +1012,7 @@ void handleAddOrDelete(Event& e) {
     setupParametres();
     M5.Rtc.GetDate(&RTCDate);
     setupData(RTCDate.Year, RTCDate.Month, RTCDate.Date);
+    current_events_count=1;
     displayRefresh();
   }
 }
