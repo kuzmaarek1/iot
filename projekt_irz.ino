@@ -1664,11 +1664,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
     M5.Lcd.print("DODAWANIE");
     delay(1000);
     int stringCountMessage = 0;
-    int dayMessage, monthMessage, yearMessage, startHoursMessage, startMinutesMessage, endHoursMessage, endMinutesMessage, typesMessage;
+    int dayMessage, monthMessage, yearMessage, startHoursMessage, startMinutesMessage, endHoursMessage, endMinutesMessage, typesMessage, createdDayMessage, createdMonthMessage, createdYearMessage, createdHoursMessage, createdMinutesMessage, createdSecondsMessage;
     while (1) {
       int indexStringMessage = message.indexOf(";");
       if (indexStringMessage == -1) {
-        typesMessage = atoi(message.substring(0,message.indexOf("n")).c_str());
+        createdSecondsMessage = atoi(message.substring(0,message.indexOf("n")).c_str());
         break;
       } else {
         if (stringCountMessage == 0) dayMessage = atoi(message.substring(0, indexStringMessage).c_str());
@@ -1678,6 +1678,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
         else if (stringCountMessage == 4) startMinutesMessage = atoi(message.substring(0, indexStringMessage).c_str());
         else if (stringCountMessage == 5) endHoursMessage = atoi(message.substring(0, indexStringMessage).c_str());
         else if (stringCountMessage == 6) endMinutesMessage = atoi(message.substring(0, indexStringMessage).c_str());
+        else if (stringCountMessage == 7) typesMessage = atoi(message.substring(0,indexStringMessage).c_str());
+        else if (stringCountMessage == 8) createdDayMessage = atoi(message.substring(0,indexStringMessage).c_str());
+        else if (stringCountMessage == 9) createdMonthMessage = atoi(message.substring(0,indexStringMessage).c_str());
+        else if (stringCountMessage == 10) createdYearMessage = atoi(message.substring(0,indexStringMessage).c_str());
+        else if (stringCountMessage == 11) createdHoursMessage = atoi(message.substring(0,indexStringMessage).c_str());
+        else if (stringCountMessage == 12) createdMinutesMessage = atoi(message.substring(0,indexStringMessage).c_str());
         stringCountMessage++;
         message = message.substring(indexStringMessage + 1);
       }
@@ -1714,16 +1720,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
           }
         } else next_day = dayMessage + 1;
       }
-      if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
-                      dayMessage,  monthMessage, yearMessage, startHoursMessage, startMinutesMessage, 23, 59, typesMessage)
-          && file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
-                          next_day, next_month, next_year, 0, 0, endHoursMessage, endMinutesMessage, typesMessage)) {
+      if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+                      dayMessage,  monthMessage, yearMessage, startHoursMessage, startMinutesMessage, 23, 59, typesMessage, createdDayMessage, createdMonthMessage, createdYearMessage, createdHoursMessage, createdMinutesMessage, createdSecondsMessage)
+          && file.printf("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+                          next_day, next_month, next_year, 0, 0, endHoursMessage, endMinutesMessage, typesMessage, createdDayMessage, createdMonthMessage, createdYearMessage, createdHoursMessage, createdMinutesMessage, createdSecondsMessage)) {
         displayBannerAdd();
       } else {
         displayBannerError();
       }
-    } else if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d\n",
-                            dayMessage, monthMessage, yearMessage, startHoursMessage, startMinutesMessage, endHoursMessage, endMinutesMessage, typesMessage)) {
+    } else if (file.printf("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+                            dayMessage, monthMessage, yearMessage, startHoursMessage, startMinutesMessage, endHoursMessage, endMinutesMessage, typesMessage, createdDayMessage, createdMonthMessage, createdYearMessage, createdHoursMessage, createdMinutesMessage, createdSecondsMessage)) {
       displayBannerAdd();
     } else {
       displayBannerError();
